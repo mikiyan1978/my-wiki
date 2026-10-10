@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Wiki</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    if (window.marked && marked.setOptions) {
+      marked.setOptions({ gfm: true, breaks: false, headerIds: false, mangle: false });
+    }
+  });
+</script>
 <style>
   :root {
     --bg: #ffffff;
@@ -125,6 +132,8 @@
   }
   #content a { color: var(--accent); }
   #content ul, #content ol { padding-left: 1.6em; }
+  #content li { margin-bottom: 6px; }
+  #content li > p { margin: 0; }
   #content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
   textarea#editor {
     width: 100%;
