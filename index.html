@@ -5,10 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Wiki</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked-gfm-heading-id/lib/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked-footnote/dist/index.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github.min.css" media="(prefers-color-scheme: light)">
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/highlight.min.js"></script>
 <script>
   window.addEventListener("DOMContentLoaded", () => {
     if (window.marked && marked.setOptions) {
-      marked.setOptions({ gfm: true, breaks: false, headerIds: false, mangle: false });
+      marked.setOptions({
+        gfm: true,
+        breaks: false,
+        mangle: false,
+        renderer: (() => {
+          const renderer = new marked.Renderer();
+          renderer.code = (code, infostring) => {
+            const lang = (infostring || "").trim().split(/\s+/)[0];
+            let highlighted;
+            try {
+              highlighted = (window.hljs && lang && hljs.getLanguage(lang))
+                ? hljs.highlight(code, { language: lang }).value
+                : (window.hljs ? hljs.highlightAuto(code).value : code.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])));
+            } catch (e) {
+              highlighted = code.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+            }
+            const langClass = lang ? ` class="hljs language-${lang}"` : ' class="hljs"';
+            return `<pre><code${langClass}>${highlighted}</code></pre>`;
+          };
+          return renderer;
+        })()
+      });
+      if (window.markedGfmHeadingId) marked.use(markedGfmHeadingId.gfmHeadingId());
+      if (window.markedFootnote) marked.use(markedFootnote.default ? markedFootnote.default() : markedFootnote());
     }
   });
 </script>
@@ -106,9 +134,10 @@
   .article-list .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
   .empty { color: var(--muted); padding: 40px 0; text-align: center; }
   #content h1, #content h2, #content h3 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-  #content pre { background: var(--code-bg); padding: 12px; border-radius: 6px; overflow-x: auto; }
+  #content pre { padding: 0; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); }
+  #content pre code.hljs { display: block; padding: 14px; border-radius: 6px; font-size: 13px; background: var(--code-bg) !important; }
   #content code { background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: 90%; }
-  #content pre code { background: none; padding: 0; }
+  #content pre code { padding: 0; }
   #content img { max-width: 100%; }
   #content table {
     border-collapse: collapse;
@@ -135,6 +164,18 @@
   #content li { margin-bottom: 6px; }
   #content li > p { margin: 0; }
   #content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  #content ul.contains-task-list { list-style: none; padding-left: 0.4em; }
+  #content li.task-list-item { list-style: none; }
+  #content li.task-list-item input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.1);
+    accent-color: var(--accent);
+  }
+  #content del { color: var(--muted); }
+  #content .footnotes { border-top: 1px solid var(--border); margin-top: 28px; padding-top: 12px; font-size: 13px; color: var(--muted); }
+  #content .footnote-ref a, #content a.footnote-backref { color: var(--accent); }
+  #content sup { font-size: 75%; }
+  #content h1 a, #content h2 a, #content h3 a, #content h4 a { color: inherit; text-decoration: none; }
   textarea#editor {
     width: 100%;
     min-height: 60vh;
