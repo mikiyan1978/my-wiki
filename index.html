@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wiki</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #656d76;
+    --border: #d0d7de;
+    --accent: #0969da;
+    --accent-fg: #ffffff;
+    --card: #f6f8fa;
+    --danger: #d1242f;
+    --code-bg: #f6f8fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --accent: #2f81f7;
+      --accent-fg: #ffffff;
+      --card: #161b22;
+      --danger: #f85149;
+      --code-bg: #161b22;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    line-height: 1.7;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  header .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .search {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--fg);
+    font-size: 14px;
+    min-width: 160px;
+  }
+  button, .btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent);
+  }
+  button.danger { color: var(--danger); }
+  main {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+  .article-list { list-style: none; margin: 0; padding: 0; }
+  .article-list li {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    background: var(--card);
+  }
+  .article-list a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 16px; }
+  .article-list .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+  #content h1, #content h2, #content h3 { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  #content pre { background: var(--code-bg); padding: 12px; border-radius: 6px; overflow-x: auto; }
+  #content code { background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: 90%; }
+  #content pre code { background: none; padding: 0; }
+  #content img { max-width: 100%; }
+  textarea#editor {
+    width: 100%;
+    min-height: 60vh;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    resize: vertical;
+  }
+  input#title-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 20px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--fg);
+    margin-bottom: 12px;
+  }
+  .toolbar { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+  .status { color: var(--muted); font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .status.error { color: var(--danger); }
+  .article-title { font-size: 30px; font-weight: 800; margin-bottom: 4px; }
+  .article-meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  dialog#token-dialog {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--fg);
+    max-width: 440px;
+    width: 92%;
+    padding: 20px;
+  }
+  dialog#token-dialog::backdrop { background: rgba(0,0,0,0.5); }
+  dialog#token-dialog p { font-size: 13px; color: var(--muted); }
+  dialog#token-dialog input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--fg);
+    margin: 8px 0 16px;
+  }
+  .row-end { display: flex; justify-content: flex-end; gap: 8px; }
+  a.back { color: var(--accent); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 onclick="location.hash=''">📖 My Wiki</h1>
+  <div class="actions">
+    <input id="search" class="search" type="search" placeholder="記事を検索..." oninput="renderList()">
+    <button class="primary" onclick="location.hash='#/new'">＋ 新規記事</button>
+    <button id="token-btn" onclick="openTokenDialog()">🔑 設定</button>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<dialog id="token-dialog">
+  <h3>GitHub アクセストークン</h3>
+  <p>編集・保存するには "repo" 権限を持つ Personal Access Token が必要です。<br>
+  GitHub → Settings → Developer settings → Personal access tokens で発行してください。<br>
+  トークンはこの端末のブラウザ内(localStorage)にのみ保存され、サーバーには送信されません。</p>
+  <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxx">
+  <div class="row-end">
+    <button class="danger" onclick="clearToken()">削除</button>
+    <button onclick="closeTokenDialog()">閉じる</button>
+    <button class="primary" onclick="saveToken()">保存</button>
+  </div>
+</dialog>
+
+<script>
+const OWNER = "mikiyan1978";
+const REPO = "my-wiki";
+const BRANCH = "main";
+const API = `https://api.github.com/repos/${OWNER}/${REPO}`;
+
+function getToken() { return localStorage.getItem("wiki_token") || ""; }
+function openTokenDialog() {
+  document.getElementById("token-input").value = getToken();
+  document.getElementById("token-dialog").showModal();
+}
+function closeTokenDialog() { document.getElementById("token-dialog").close(); }
+function saveToken() {
+  const v = document.getElementById("token-input").value.trim();
+  if (v) localStorage.setItem("wiki_token", v);
+  closeTokenDialog();
+  updateTokenBtn();
+}
+function clearToken() {
+  localStorage.removeItem("wiki_token");
+  closeTokenDialog();
+  updateTokenBtn();
+}
+function updateTokenBtn() {
+  document.getElementById("token-btn").textContent = getToken() ? "🔑 設定済み" : "🔑 設定";
+}
+
+function ghHeaders() {
+  const h = { "Accept": "application/vnd.github+json" };
+  const t = getToken();
+  if (t) h["Authorization"] = "token " + t;
+  return h;
+}
+
+function b64EncodeUnicode(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUnicode(str) {
+  return decodeURIComponent(escape(atob(str)));
+}
+
+function slugify(title) {
+  return title.trim()
+    .replace(/[\s]+/g, "-")
+    .replace(/[^\p{L}\p{N}\-_]/gu, "")
+    .toLowerCase() || ("article-" + Date.now());
+}
+
+let articleCache = null;
+
+async function listArticles(force) {
+  if (articleCache && !force) return articleCache;
+  const res = await fetch(`${API}/contents/articles?ref=${BRANCH}`, { headers: ghHeaders() });
+  if (res.status === 404) { articleCache = []; return []; }
+  if (!res.ok) throw new Error("一覧取得に失敗しました (" + res.status + ")");
+  const data = await res.json();
+  articleCache = data.filter(f => f.name.endsWith(".md")).map(f => ({
+    slug: f.name.replace(/\.md$/, ""),
+    path: f.path,
+    sha: f.sha
+  }));
+  return articleCache;
+}
+
+async function getArticle(slug) {
+  const res = await fetch(`${API}/contents/articles/${encodeURIComponent(slug)}.md?ref=${BRANCH}`, { headers: ghHeaders() });
+  if (!res.ok) throw new Error("記事の取得に失敗しました (" + res.status + ")");
+  const data = await res.json();
+  const content = b64DecodeUnicode(data.content.replace(/\n/g, ""));
+  const titleMatch = content.match(/^#\s+(.+)$/m);
+  return { slug, sha: data.sha, content, title: titleMatch ? titleMatch[1] : slug };
+}
+
+async function saveArticle(slug, content, sha) {
+  const t = getToken();
+  if (!t) { openTokenDialog(); throw new Error("トークンを設定してください"); }
+  const body = {
+    message: (sha ? "update: " : "create: ") + slug,
+    content: b64EncodeUnicode(content),
+    branch: BRANCH
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(`${API}/contents/articles/${encodeURIComponent(slug)}.md`, {
+    method: "PUT",
+    headers: { ...ghHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error("保存に失敗しました: " + (err.message || res.status));
+  }
+  articleCache = null;
+  return res.json();
+}
+
+async function deleteArticle(slug, sha) {
+  const t = getToken();
+  if (!t) { openTokenDialog(); throw new Error("トークンを設定してください"); }
+  const res = await fetch(`${API}/contents/articles/${encodeURIComponent(slug)}.md`, {
+    method: "DELETE",
+    headers: { ...ghHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "delete: " + slug, sha, branch: BRANCH })
+  });
+  if (!res.ok) throw new Error("削除に失敗しました (" + res.status + ")");
+  articleCache = null;
+}
+
+// --- Routing ---
+window.addEventListener("hashchange", route);
+window.addEventListener("DOMContentLoaded", () => { updateTokenBtn(); route(); });
+
+function route() {
+  const hash = location.hash;
+  if (hash.startsWith("#/view/")) {
+    viewArticle(decodeURIComponent(hash.slice(7)));
+  } else if (hash.startsWith("#/edit/")) {
+    editArticle(decodeURIComponent(hash.slice(7)));
+  } else if (hash === "#/new") {
+    editArticle(null);
+  } else {
+    showList();
+  }
+}
+
+let listCacheForSearch = [];
+
+async function showList() {
+  const app = document.getElementById("app");
+  app.innerHTML = `<p class="status">読み込み中...</p>`;
+  try {
+    listCacheForSearch = await listArticles(true);
+    renderList();
+  } catch (e) {
+    app.innerHTML = `<p class="status error">${e.message}</p>`;
+  }
+}
+
+function renderList() {
+  const app = document.getElementById("app");
+  const q = (document.getElementById("search")?.value || "").toLowerCase();
+  const items = listCacheForSearch.filter(a => a.slug.toLowerCase().includes(q));
+  if (items.length === 0) {
+    app.innerHTML = `<div class="empty">まだ記事がありません。「＋ 新規記事」から作成してください。</div>`;
+    return;
+  }
+  app.innerHTML = `<ul class="article-list">` + items.map(a => `
+    <li>
+      <a href="#/view/${encodeURIComponent(a.slug)}">${a.slug}</a>
+      <div class="meta">${a.path}</div>
+    </li>
+  `).join("") + `</ul>`;
+}
+
+async function viewArticle(slug) {
+  const app = document.getElementById("app");
+  app.innerHTML = `<p class="status">読み込み中...</p>`;
+  try {
+    const art = await getArticle(slug);
+    app.innerHTML = `
+      <a class="back" href="#/">← 一覧へ戻る</a>
+      <div class="article-title">${art.title}</div>
+      <div class="article-meta">${slug}.md</div>
+      <div class="toolbar">
+        <button onclick="location.hash='#/edit/${encodeURIComponent(slug)}'">✏️ 編集</button>
+        <button class="danger" onclick="onDelete('${slug.replace(/'/g, "\\'")}', '${art.sha}')">🗑 削除</button>
+      </div>
+      <div id="content">${marked.parse(art.content)}</div>
+    `;
+  } catch (e) {
+    app.innerHTML = `<a class="back" href="#/">← 一覧へ戻る</a><p class="status error">${e.message}</p>`;
+  }
+}
+
+async function onDelete(slug, sha) {
+  if (!confirm(`「${slug}」を削除します。よろしいですか？`)) return;
+  try {
+    await deleteArticle(slug, sha);
+    location.hash = "#/";
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function editArticle(slug) {
+  const app = document.getElementById("app");
+  let art = { slug: "", sha: null, content: "# \n\nここに本文を書いてください。" };
+  if (slug) {
+    app.innerHTML = `<p class="status">読み込み中...</p>`;
+    try { art = await getArticle(slug); }
+    catch (e) { app.innerHTML = `<p class="status error">${e.message}</p>`; return; }
+  }
+  app.innerHTML = `
+    <a class="back" href="#/">← 一覧へ戻る</a>
+    <input id="title-input" value="${art.title || ""}" placeholder="記事タイトル">
+    <textarea id="editor">${art.content.replace(/<\/textarea>/g, "")}</textarea>
+    <div class="toolbar">
+      <button class="primary" onclick="onSave('${slug ? slug.replace(/'/g, "\\'") : ""}', '${art.sha || ""}')">💾 保存</button>
+      <button onclick="location.hash = ${slug ? `'#/view/${encodeURIComponent(slug)}'` : "'#/'"}">キャンセル</button>
+    </div>
+    <div id="save-status" class="status"></div>
+  `;
+  if (!slug) {
+    document.getElementById("editor").value = "# 新しい記事\n\nここに本文を書いてください。Markdown記法が使えます。";
+  }
+}
+
+async function onSave(existingSlug, sha) {
+  const title = document.getElementById("title-input").value.trim() || "無題";
+  let body = document.getElementById("editor").value;
+  if (!/^#\s/.test(body.trim())) {
+    body = `# ${title}\n\n` + body;
+  } else {
+    body = body.replace(/^#\s+.*$/m, `# ${title}`);
+  }
+  const slug = existingSlug || slugify(title);
+  const statusEl = document.getElementById("save-status");
+  statusEl.textContent = "保存中...";
+  statusEl.className = "status";
+  try {
+    await saveArticle(slug, body, sha || undefined);
+    location.hash = `#/view/${encodeURIComponent(slug)}`;
+  } catch (e) {
+    statusEl.textContent = e.message;
+    statusEl.className = "status error";
+  }
+}
+</script>
+</body>
+</html>
