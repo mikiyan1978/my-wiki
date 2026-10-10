@@ -19,7 +19,9 @@
         mangle: false,
         renderer: (() => {
           const renderer = new marked.Renderer();
-          renderer.code = (code, infostring) => {
+          renderer.code = (token) => {
+            const code = (token && typeof token === "object") ? (token.text || "") : String(token || "");
+            const infostring = (token && typeof token === "object") ? (token.lang || "") : "";
             const lang = (infostring || "").trim().split(/\s+/)[0];
             let highlighted;
             try {
