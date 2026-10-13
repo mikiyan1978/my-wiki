@@ -128,6 +128,60 @@ python3 run_attach.py <SpringBoardのPID> swipe_up.js 4      # 続けて上ス�
 
 実機確認: この直後に`uiopen --bundleid com.apple.mobilesafari`を実行したところ、**実際にMobileSafariプロセスが起動した**(ロック中は何度やっても失敗していたのが、ここで初めて成功)。クラッシュログの増加なし、SpringBoard PIDも不変。
 
+## 3. スクリーンショットを撮る(`_UICreateScreenUIImage`)
+
+ウィンドウ探索や`drawViewHierarchyInRect:`/`renderInContext:`は**メインスレッド必須**で、Frida経由(別スレッド)から直接呼ぶと`abort`(運が良ければ)または実クラッシュ(後述)になる。[nekohasekai/icli](https://github.com/nekohasekai/icli)(`Sources/IcliPrivate/IcliPrivate.m`)の実装を見て解決: 実体は引数なしの単純なC関数`_UICreateScreenUIImage()`で、構造体渡しもウィンドウ取得も不要、**トップレベルから直接呼んでも安全**だった。
+
+`take_screenshot.js`:
+```javascript
+var _UICreateScreenUIImage = new NativeFunction(Module.findGlobalExportByName("_UICreateScreenUIImage"), "pointer", []);
+var UIImagePNGRepresentation = new NativeFunction(Module.findGlobalExportByName("UIImagePNGRepresentation"), "pointer", ["pointer"]);
+var objc_getClass = new NativeFunction(Module.findGlobalExportByName("objc_getClass"), "pointer", ["pointer"]);
+var sel_registerName = new NativeFunction(Module.findGlobalExportByName("sel_registerName"), "pointer", ["pointer"]);
+var objc_msgSend_ptr_ptr = new NativeFunction(Module.findGlobalExportByName("objc_msgSend"), "pointer", ["pointer", "pointer", "pointer"]);
+var objc_msgSend_str_bool_bool = new NativeFunction(Module.findGlobalExportByName("objc_msgSend"), "bool", ["pointer", "pointer", "pointer", "int"]);
+function sel(name) { return sel_registerName(Memory.allocUtf8String(name)); }
+
+setTimeout(function () {
+    var image = _UICreateScreenUIImage();
+    var pngData = UIImagePNGRepresentation(image); // UIImageJPEGRepresentationはこのimageに対してなぜか常にnilを返した。PNGは問題なし
+    var nsStringCls = objc_getClass(Memory.allocUtf8String("NSString"));
+    var pathStr = objc_msgSend_ptr_ptr(nsStringCls, sel("stringWithUTF8String:"), Memory.allocUtf8String("/var/mobile/screenshot.png"));
+    objc_msgSend_str_bool_bool(pngData, sel("writeToFile:atomically:"), pathStr, 1);
+}, 150);
+```
+
+`scp`でPNGを取り出せばそのまま画面の中身が見える(時刻・通知・ロック画面の壁紙まで正確に写る)。**画面がオフの時は普通に真っ黒なPNGが返る**(バグではなく正しい挙動) — 撮る前に`wake_screen.js`で起こすこと。
+
+### 失敗した試行(クラッシュ6回)
+
+同じスクリーンショットを`drawViewHierarchyInRect:afterScreenUpdates:`や`-[CALayer renderInContext:]`で撮ろうとして、`dispatch_async_f` + `NativeCallback`でメインスレッドに乗せる方式を使ったところ、**内容に関係なく4/4でSpringBoardがクラッシュした**(`_dispatch_main_queue_drain`内の`EXC_BAD_ACCESS`、毎回同じ無効アドレス)。`-[UIApplication sendEvent:]`のような超高頻度に呼ばれる関数へ`Interceptor.attach`で割り込むのも1回クラッシュした(`_os_unfair_lock_corruption_abort`、フック設置の瞬間に発生 — ホットパスへのランタイムパッチは別スレッドの同時実行とレースする)。**教訓: `dispatch_async_f`/`NativeCallback`でメインスレッドに処理を乗せる方式はこの環境で信頼できない。超高頻度に呼ばれる関数へのフックも避ける。** `_UICreateScreenUIImage()`のように「そもそもどのスレッドからでも安全に呼べるよう作られた関数」を探す方が確実。
+
+## 4. ロック画面上のシステムアラートを操作する(UIAlertActionのハンドラを直接呼ぶ)
+
+上記のクラッシュの巻き添えで端末がSafe Modeに入り(SpringBoard tweak無効化)、「Exit Safe Mode」のアラートがロック画面の上に出た。この機種(iPhone 8 Plus、物理Homeボタン)は**上スワイプが unlock ジェスチャーとして機能しない**(Face ID機のみの挙動だった)ため、スワイプやHomeボタンHIDイベントでは解除できず、アラート自体もロック中は非対話的(タップしてもロック画面自身の「ホームボタンを押して開く」ヒントが出るだけ)。
+
+解決策: **タッチもロック解除も介さず、アラートのボタンのハンドラブロックを直接見つけて呼び出す**。
+
+1. `[[UIApplication sharedApplication] windows]`を全走査し、`rootViewController.presentedViewController`を辿って`UIAlertController`を探す(読み取り専用、副作用なし)
+2. `.actions`配列から目的の`UIAlertAction`を`title`で特定
+3. `-[UIAlertAction handler]`(公開同然のアクセサ、`@?16@0:8`=ブロックを返すだけ)でハンドラブロックを取得
+4. ブロックのABI(`isa`+`flags`+`reserved`+`invoke`、`invoke`はオフセット16)から`invoke`関数ポインタを読み、`invoke(block, action)`として直接呼ぶ
+
+```javascript
+var alertVC = /* windows walk, see find_alert.js */;
+var actions = objc_msgSend_ptr(alertVC, sel("actions"));
+// ... actions.count 分 objectAtIndex: で回して title が一致するものを targetAction に ...
+var handlerBlock = objc_msgSend_ptr(targetAction, sel("handler"));
+var invokePtr = handlerBlock.add(16).readPointer(); // Block_layout: isa(8)+flags(4)+reserved(4)+invoke
+var invoke = new NativeFunction(invokePtr, "void", ["pointer", "pointer"]);
+invoke(handlerBlock, targetAction);
+```
+
+実行したら即座にSpringBoardがリスプリング(ハンドラ自体がそれを行うため、呼び出し元のFridaスクリプトは「script is destroyed」で終わるのが正常)。再起動後、ロック画面からSafe Modeアラートが消えていることをスクリーンショットで確認、クラッシュログの増加なし。
+
+この手法はSafe Mode以外の「ロック画面の上に出る系システムアラート」全般に応用できる(タッチ精度やロック状態を気にせず、ボタンを押したのと同じ効果を直接起こせる)。
+
 ## やってはいけないこと: SBLockScreenManagerへの直接呼び出し
 
 同じ目的で、最初は`-[SBLockScreenManager unlockUIFromSource:withOptions:]`のような**プライベートメソッドを直接呼ぶ**アプローチを試した。結果:
