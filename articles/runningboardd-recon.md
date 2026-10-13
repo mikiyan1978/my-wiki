@@ -62,15 +62,42 @@ iOS 16.7.16 (iPhone 8 Plus, palera1n rootful脱獄) の `runningboardd` を、Fr
 
 ログは `/var/mobile/Class Dump/runningboardd/behavior_observe.log` に追記。
 
-### 結果(進行中)
+### 結果
 
 - 5フックすべて正常にインストール、`runningboardd`のPID・CrashReporterログともに異常なし(安定稼働を確認)
-- 観察開始直後は画面オフ・待機中だったためイベント0件 → この後、実際にアプリを起動/終了させた際の挙動を追記予定
+- 観察開始直後は画面オフ・待機中だったため、最初に発火したのはバックグラウンドデーモン(`com.apple.icloud.fmfd`, `com.apple.icloud.searchpartyd`)の`role:None`↔`role:Background`遷移のみだった
+
+### 第2弾フック(`observe_behavior2.js`、別セッションとして追加)
+
+同じPIDに**独立した2つ目のFridaセッション**を張って追加(既存フックは解除しない方針を厳守)。「アプリ起動の実際の経路はどこか」を確かめる目的:
+
+| クラス | セレクタ |
+|---|---|
+| `RBProcessManager` | `-executeLaunchRequest:withError:` |
+| `RBLaunchManager` | `-executeLaunchRequest:existingProcess:requestIdentity:withError:` |
+| `RBProcessMonitor` | `-didAddProcess:withState:` |
+| `RBProcessMonitor` | `-didRemoveProcess:withState:` |
+| `RBProcessMonitor` | `-didUpdateProcessStates:` |
+
+### 分かったこと
+
+`uiopen --bundleid com.apple.mobilesafari`でSafariを起動 → `killall MobileSafari`で終了、を試した結果:
+
+1. **`processDidLaunch:`/`acquireWithError:`は一度も発火しなかった** — Safariの通常起動では使われていない(もっと内部的な経路を通る)らしい
+2. **`killall`による終了は確実に捕捉できた**:
+   ```
+   RBAssertionManager -processDidTerminate:  arg2=[application<com.apple.mobilesafari>:47204]
+   RBProcessStateChange init  role:None → role:None
+   RBProcessMonitor -didUpdateProcessStates:  arg2=<RBProcessStateChangeSet: 0x82e8b13a0>
+   RBProcessMonitor -didRemoveProcess:withState:  arg2=[application<com.apple.mobilesafari>:47204]
+   ```
+   → **`didRemoveProcess:withState:`がプロセス終了の実際の信号**だと確認できた
+3. **画面ロック中の再起動リクエストは、runningboardd側のどのフックにも到達しなかった**(`executeLaunchRequest:`すら発火せず、`ps`にもプロセスが現れない)。つまりロック中のフォアグラウンド起動拒否は、**runningboarddより上位層(SpringBoard/FrontBoard)で止められている**可能性が高い。起動側(`didAddProcess:`等)を捕捉するには、画面をロック解除した状態で試す必要がある。
 
 ---
 
 ## 次にやること
 
-- [ ] 画面オン、アプリ起動・終了・バックグラウンド遷移時のログを採取
-- [ ] `RBProcessStateChange`の`originalState`/`updatedState`の`-description`から、状態がどんな文字列で表現されるか確認
-- [ ] 必要なら`RBSProcessMonitor`(アプリから監視を受け取る側のクラス)も追加観察
+- [ ] 画面ロックを解除した状態でSafari等を起動し、`didAddProcess:withState:`/`executeLaunchRequest:`系が発火するか確認
+- [ ] SSH経由で画面を点ける/ロックを解除する安全な方法を調査中(物理ボタン相当のHIDイベント送信など)
+- [ ] `RBProcessStateChange`の`originalState`/`updatedState`の`-description`から、状態がどんな文字列で表現されるか継続確認
