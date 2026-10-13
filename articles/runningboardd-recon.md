@@ -114,7 +114,32 @@ SpringBoard(PID例: 28055)に対してFridaで一回限りの呼び出し(`wake_
 - 呼び出し自体はエラーなく完了、SpringBoardもクラッシュせず安定継続
 - ただしこの後も`uiopen`でのSafari起動は失敗したままだった → **画面を起こすだけでは足りず、実際にロック解除(パスコード/Face ID)されていないとフォアグラウンド起動はできない**らしいと判明。パスコード/Face IDのバイパスは意図的に行わない(ユーザー自身の操作が必要な領域)。
 
+## SBLockScreenManagerへの直接呼び出しは危険(実際にクラッシュした)
+
+ロック状態を読むだけの`isUILocked`(安全、`1`=ロック中と確認できた)に続けて、`isLockScreenVisible`を呼んだところ`abort was called`。これはFridaがスレッド違い(メインスレッド以外からの呼び出し)を安全側で止めた「幸運な回避」だった。
+
+`dispatch_async_f` + `_dispatch_main_q`で正しくメインスレッドに乗せて同じ呼び出しをやり直したところ、**実際にSpringBoardが`EXC_BAD_ACCESS`(SIGSEGV, 無効アドレス`0x138`)でクラッシュしてリスプリングした**(`_dispatch_main_queue_drain`の中、スタックトレースで確認)。デバイス自体のリブートはなし、`runningboardd`も無事だったが、**`SBLockScreenManager`の状態系メソッドはこのiOS16.7.16の状態では呼ばない**という結論に至った。以後この方向は完全に断念し、実際のタッチ入力経路(IOHIDEventのデジタイザイベント)に切り替えた。
+
+## 指一本触れず画面オフ→ホーム画面到達(成功)
+
+パスコード未設定(palera1n)という前提のもと、以下の組み合わせで**物理操作ゼロ**でのアプリ起動まで到達できた:
+
+1. 電源ボタン相当のHIDイベント(`wake_screen.js`、既出)で画面をウェイク
+2. 1本指の上スワイプを、実際のタッチ入力経路と同じ`IOHIDEvent`デジタイザイベントで再現(`swipe_up.js`):
+   ```
+   IOHIDEventCreateDigitizerEvent(NULL, time, transducerIndex=3, transducerType=99, eventMask=1, ...)
+     + IOHIDEventAppendEvent(parent, IOHIDEventCreateDigitizerFingerEvent(...))
+     + IOHIDEventSetSenderID(parent, <固定のseederID値>)
+     → IOHIDEventSystemClientDispatchEvent(client, parent)
+   ```
+   DOWN(y=0.92) → MOVE×6(y=0.80→0.08、25ms間隔) → UPの順で1本指スワイプを合成。実装は[xuan32546/IOS13-SimulateTouch](https://github.com/xuan32546/IOS13-SimulateTouch)の`pccontrol/Touch.xm`を参考にした。
+3. `uiopen --bundleid com.apple.mobilesafari`で起動 → **実際にMobileSafariプロセスが起動した**(今まで何度も失敗していたのが、ここで初めて成功)
+
+クラッシュログ増加なし、SpringBoard PIDも不変で安定。`SBLockScreenManager`への直接メソッド呼び出し(危険、上述)を迂回し、**本物の入力経路を模倣する方が安全で確実**という結論。
+
+ただし今回のSafari起動でも、既存の`runningboardd`観察フック(`didAddProcess:withState:`/`executeLaunchRequest:`等)はどれも発火しなかった — ロック状態とは無関係に、Safariの通常起動がそもそも別の経路を通っている可能性が高い(未解明、継続課題)。
+
 ## 次にやること
 
-- [ ] 実際にロック解除された状態でSafari等を起動し、`didAddProcess:withState:`/`executeLaunchRequest:`系が発火するか確認
+- [ ] Safari起動の実際の経路(`didAddProcess:`等が発火しない理由)を別角度から特定する
 - [ ] `RBProcessStateChange`の`originalState`/`updatedState`の`-description`から、状態がどんな文字列で表現されるか継続確認
