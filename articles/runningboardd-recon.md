@@ -96,8 +96,25 @@ iOS 16.7.16 (iPhone 8 Plus, palera1n rootful脱獄) の `runningboardd` を、Fr
 
 ---
 
+## 画面オンの方法(SSH経由、物理ボタン相当)
+
+外出先からでもSSH経由でウェイクできるか調査。既知の手法(auto-mobile等のiOSシミュレータ操作ツールやジェイルブレイク界隈で広く使われている方式)を発見:
+
+```
+IOHIDEventSystemClientCreate(NULL)
+  → IOHIDEventCreateKeyboardEvent(NULL, mach_absolute_time(), page=0x0C(Consumer), usage=0x30(Power), down=1, flags=0)
+  → IOHIDEventSystemClientDispatchEvent(client, event)
+  (120ms後にdown=0で同様にUPイベントも送信)
+```
+
+これは**物理的な電源ボタン押下をHIDレベルで再現する**もので、backboardd/SpringBoardは実際のボタン操作と同じに扱う。パスコードをバイパスするものではない(ロック画面を表示するだけ)。
+
+SpringBoard(PID例: 28055)に対してFridaで一回限りの呼び出し(`wake_screen.js`、Interceptor.attach無し、呼んで即detach)として実行:
+- シンボル解決(`IOHIDEventSystemClientCreate`等)は全て成功
+- 呼び出し自体はエラーなく完了、SpringBoardもクラッシュせず安定継続
+- ただしこの後も`uiopen`でのSafari起動は失敗したままだった → **画面を起こすだけでは足りず、実際にロック解除(パスコード/Face ID)されていないとフォアグラウンド起動はできない**らしいと判明。パスコード/Face IDのバイパスは意図的に行わない(ユーザー自身の操作が必要な領域)。
+
 ## 次にやること
 
-- [ ] 画面ロックを解除した状態でSafari等を起動し、`didAddProcess:withState:`/`executeLaunchRequest:`系が発火するか確認
-- [ ] SSH経由で画面を点ける/ロックを解除する安全な方法を調査中(物理ボタン相当のHIDイベント送信など)
+- [ ] 実際にロック解除された状態でSafari等を起動し、`didAddProcess:withState:`/`executeLaunchRequest:`系が発火するか確認
 - [ ] `RBProcessStateChange`の`originalState`/`updatedState`の`-description`から、状態がどんな文字列で表現されるか継続確認
