@@ -227,6 +227,44 @@ SBLockScreenManager -lockScreenViewControllerDidDismiss
 - `_setDismissed:`(前章で直接呼んでハングした同じメソッド!)は、**正しい文脈(本物の解除シーケンスの一部として)で呼ばれる分には問題なく動く** — ハングするのは「文脈を無視して単独で呼んだ」ことが原因だったと考えられる
 - 結局、電源ボタン単体・スワイプ単体では解除されず、**電源ボタン→Homeボタン→スワイプの3点セット**が必要だった
 
+## 6. バッテリー切れ・再ジェイルブレイク後にハマった点(2026-10-14)
+
+長時間の検証(複数の`run_persistent.py`を同時に張りっぱなし + 画面の点灯/消灯を繰り返す)の結果、デバイスのバッテリーが完全に切れて電源が落ちた。
+
+### palera1nはsemi-tethered — 完全な電源断は脱獄が外れる
+
+バッテリー切れ→充電→自動起動の後、SSHが`Host is down`から`Connection refused`に変わった(ネットワーク層は復帰したがSSHデーモンが存在しない)。これは**palera1nがA11チップ向けのsemi-tethered(準有線)脱獄であるため、完全な電源断を経ると非脱獄状態で起動する**ことが原因。SSH/frida-serverも脱獄の上に乗っている機能なので両方消える。
+
+**復旧にはUSB接続での再脱獄が必須**(ネットワーク経由では不可能)。再脱獄後は以下を忘れずに:
+- `frida-server`を`-l 0.0.0.0:27042`で再起動(環境ゴッチャの定番、再起動のたびに必要)
+- SpringBoardのPIDが変わっている(今回は`39` — 起動直後は小さい番号になりやすい)
+
+### `run_attach.py`の隠れた遅延が引き起こした「3点セットが効かない」再発
+
+再脱獄後、本章冒頭の「電源→Home→スワイプ」の3点セットを**`run_attach.py`を3回に分けて**(`python3 run_attach.py <pid> wake_screen.js && python3 run_attach.py <pid> press_home.js && python3 run_attach.py <pid> swipe_up.js`)実行したところ、2回連続で解除に失敗した(`isUILocked`が`1`のまま)。
+
+観察フック(`observe_unlock_path.js`)のログを見ると、スワイプが`CSCoverSheetViewController -_setDismissed:`/`lockScreenViewControllerDidDismiss`ではなく、`SBLockScreenManager -_runUnlockActionBlock: arg2=nil`→`lockUIFromSource:withOptions:`という**無効な解除試行→再ロック**のパスを辿っていた。
+
+原因は`run_attach.py`自体の実装:
+
+```python
+script.load()
+print("ATTACHED_AND_LOADED, pid=", pid)
+time.sleep(duration)  # デフォルト15秒!
+script.unload()
+session.detach()
+```
+
+スクリプト内の実際のボタン操作(`setTimeout`で150〜300ms後に発火)はすぐ終わるが、**プロセス自体はその後も`duration`(デフォルト15秒)分スリープしてから`detach`する**。そのため`wake→home→swipe`を3つの別プロセスで逐次実行すると、各ステップの「実際のボタン操作」の間に**15秒近い間隔**が生まれてしまい、途中で画面が自動消灯/ロック状態が変化して、スワイプが本来の解除ジェスチャーとして認識されなくなっていた。
+
+**対処**: 電源→Home→スワイプ→`isUILocked`確認までを**1つのFridaセッション内で**、実際の操作感に近い短い間隔(600ms程度)で連続実行するスクリプトに統合した(`unlock_combined.js`)。これで一発で`isUILocked`が`0`になり、スクリーンショットでもホーム画面到達を確認できた。
+
+### 教訓
+
+- `run_attach.py`/`run_persistent.py`のような「attach→実行→detach」ランナーを**複数回に分けて連続実行する**場合、各呼び出しの間の**実時間の空き**を見落としやすい(プリント自体はすぐ出るので気づきにくい) — タイミングがシビアな一連の操作(今回のような解除シーケンス)は、**可能な限り1セッション内で完結させる**のが安全
+- `_UICreateScreenUIImage()`によるスクリーンショットは「画面が黒 = 本当に消灯」の判定に使えるが、**別プロセスを跨ぐと、スクリーンショットを撮る時点では既に状態が変わっている**ことがあるので、診断時は同一セッション内の連続スクリーンショット(`wake_then_screenshot_series.js`方式)で切り分けるのが確実
+- バッテリー切れ(=完全な電源断)はsemi-tetheredジェイルブレイクでは「リスプリング」よりずっと重い事象 — USB物理アクセスが必須になる点を留意
+
 ## やってはいけないこと: SBLockScreenManagerへの直接呼び出し
 
 同じ目的で、最初は`-[SBLockScreenManager unlockUIFromSource:withOptions:]`のような**プライベートメソッドを直接呼ぶ**アプローチを試した。結果:
