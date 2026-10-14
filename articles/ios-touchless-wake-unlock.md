@@ -265,6 +265,8 @@ session.detach()
 - `_UICreateScreenUIImage()`によるスクリーンショットは「画面が黒 = 本当に消灯」の判定に使えるが、**別プロセスを跨ぐと、スクリーンショットを撮る時点では既に状態が変わっている**ことがあるので、診断時は同一セッション内の連続スクリーンショット(`wake_then_screenshot_series.js`方式)で切り分けるのが確実
 - バッテリー切れ(=完全な電源断)はsemi-tetheredジェイルブレイクでは「リスプリング」よりずっと重い事象 — USB物理アクセスが必須になる点を留意
 
+`unlock_combined.js`による解除後、ホーム画面→電源ボタン1回で画面オフ(`isUILocked`が`0`→`1`)→再度`unlock_combined.js`で解除、の往復を2サイクル連続で実行し、毎回`isUILocked`の値と目視(スクリーンショット)の両方で確認した。SpringBoardのPID変化・クラッシュは一切なし。再脱獄後も往復の再現性は健在。
+
 ## やってはいけないこと: SBLockScreenManagerへの直接呼び出し
 
 同じ目的で、最初は`-[SBLockScreenManager unlockUIFromSource:withOptions:]`のような**プライベートメソッドを直接呼ぶ**アプローチを試した。結果:
