@@ -8,9 +8,13 @@
 
 ## 結論だけ先に
 
-1. 電源ボタン押下をHIDレベルで再現 → 画面がオンになる
-2. 1本指の上スワイプをHIDレベルで再現 → ロック画面が解除されホーム画面に到達
-3. 普通に`uiopen`等でアプリを起動すればそのまま立ち上がる
+**最終的に確実に動いた手順(この順番、全てHIDレベルの合成イベント)**:
+
+1. 電源ボタン押下を再現 → 画面オン
+2. Homeボタン押下を再現(Consumerページ、usage `0x40`)
+3. 1本指の上スワイプを再現
+
+この3つを順番に送ると、`isUILocked`が`1`→`0`に変わり、実際にホーム画面に到達する(第5章で検証済み)。電源ボタンだけ、スワイプだけ、Homeボタンだけ、では単独では解除まで到達しなかった — **3つの組み合わせで初めて本物の解除シーケンスとして認識される**らしい(詳しい内部挙動は第5章の観察ログ参照)。
 
 いずれも**本物の入力経路(IOHIDEventSystemClient)**を通すので、SpringBoardの内部メソッドを直接叩くより安全(後述の「やってはいけないこと」参照)。
 
@@ -181,6 +185,45 @@ invoke(handlerBlock, targetAction);
 実行したら即座にSpringBoardがリスプリング(ハンドラ自体がそれを行うため、呼び出し元のFridaスクリプトは「script is destroyed」で終わるのが正常)。再起動後、ロック画面からSafe Modeアラートが消えていることをスクリーンショットで確認、クラッシュログの増加なし。
 
 この手法はSafe Mode以外の「ロック画面の上に出る系システムアラート」全般に応用できる(タッチ精度やロック状態を気にせず、ボタンを押したのと同じ効果を直接起こせる)。
+
+## 5. 本当にホーム画面まで到達させる(観察ベースのブレークスルー)
+
+iPhone 8 Plus(物理Homeボタン、Touch ID)は**Face ID機専用の「上スワイプで解除」ジェスチャーを持たない**ため、2章のスワイプ単体や、電源ボタン+スワイプの組み合わせだけでは実際には解除されない(`isUILocked`は`1`のまま)、ということが後になって判明した。
+
+### 遠回りした道のり: 直接メソッド呼び出しは次々ハングする
+
+「本物の解除処理」を直接呼んで解除しようとしたが、以下は**全てハング**した(Fridaクライアント側が応答を待ち続ける。SpringBoard自体はCPU 0%で無傷、クラッシュはしない):
+
+- `-[SBLockScreenManager unlockUIFromSource:withOptions:]`
+- `-[SBLockScreenManager attemptUnlockWithMesa]`
+- `-[CSCoverSheetViewController prepareForUIUnlock]` → `willUIUnlockFromSource:` → `finishUIUnlockFromSource:`(連続呼び出し)
+- `-[UIApplication _simulateHomeButtonPressWithCompletion:]`(AssistiveTouchが実際に使う正規API)
+- `-[CSCoverSheetViewController _setDismissed:]`(単純なBOOL setterのはずだった)
+- `-[SBHomeHardwareButton emulateHomeButtonEventsIfNeeded:]`(本物の`IOHIDEventRef`を渡しても)
+
+唯一ハングしなかったのは`-[SBHomeHardwareButton initialButtonDown:]`/`singlePressUp:`を`nil`引数で呼んだ場合だが、何も起きなかった(引数から状態を読む実装なので、`nil`だと早期リターンしていると見られる)。
+
+**推測される原因**: これらのメソッドは内部で`dispatch_sync`等によってメインスレッドへ処理を委譲しており、Frida注入スレッドが「本物のメインスレッド」と認識されないため自己デッドロックしている可能性が高い。
+
+### 解決策: 推測をやめて、広範囲に観察する
+
+直接呼ぶのをやめ、**候補メソッドに片っ端から読み取り専用フックを仕掛けて、実際に発火する経路を観察する**方針に切り替えた(`observe_unlock_path.js`)。`SBHomeHardwareButton`・`CSCoverSheetViewController`・`SBLockScreenManager`・`SpringBoard`の計38メソッドに`Interceptor.attach`の`onEnter`のみ(`%orig`は常に継続、戻り値は一切触らない)でフックし、`run_persistent.py`で常駐させた。
+
+その状態で**電源ボタン→Homeボタン→上スワイプ**の順に合成イベントを送ったところ、ログに次が記録された:
+
+```
+CSCoverSheetViewController -_setDismissed:  arg2=(desc err)
+SBLockScreenManager -lockScreenViewControllerDidDismiss
+```
+
+直後に`isUILocked`を確認すると`0`になっており、スクリーンショットで実際のホーム画面(アプリアイコン・Dock)が撮影できた。日時も実際の時刻(`2026/10/14(水) 11:03:14`)と一致。
+
+### 教訓
+
+- 内部APIを**推測で直接呼ぶ**のはハング/クラッシュのリスクが高い
+- 代わりに**広範囲の読み取り専用フックを仕掛けてから、既に安全だと分かっている入力(HIDイベント)を実際に送り、どの経路が本当に呼ばれるかを観察する**方が、遥かに安全かつ確実
+- `_setDismissed:`(前章で直接呼んでハングした同じメソッド!)は、**正しい文脈(本物の解除シーケンスの一部として)で呼ばれる分には問題なく動く** — ハングするのは「文脈を無視して単独で呼んだ」ことが原因だったと考えられる
+- 結局、電源ボタン単体・スワイプ単体では解除されず、**電源ボタン→Homeボタン→スワイプの3点セット**が必要だった
 
 ## やってはいけないこと: SBLockScreenManagerへの直接呼び出し
 
