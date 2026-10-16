@@ -141,5 +141,14 @@ SpringBoard(PID例: 28055)に対してFridaで一回限りの呼び出し(`wake_
 
 ## 次にやること
 
-- [ ] Safari起動の実際の経路(`didAddProcess:`等が発火しない理由)を別角度から特定する
+- [ ] Safari起動の実際の経路(`didAddProcess:`等が発火しない理由)を別角度から特定する——**その後のセッションでも未解明のまま**(優先度を下げ、タッチレス解除/tweak化の作業を優先したため)
 - [ ] `RBProcessStateChange`の`originalState`/`updatedState`の`-description`から、状態がどんな文字列で表現されるか継続確認
+
+## その後の進展(別記事)
+
+この記事で見つけた「画面オンのHIDイベント」「`SBLockScreenManager`への直接呼び出しは危険」という知見は、後のセッションで大きく発展した:
+
+- [ios-touchless-wake-unlock.md](ios-touchless-wake-unlock.md) — 画面オフから実際にホーム画面に到達するところまで完成(電源→ホーム→スワイプの3点セット)、往復の再現性確認、Safe Mode復旧、バッテリー切れ/再ジェイルブレイクのハマりどころ
+- [ios-touchless-app-control.md](ios-touchless-app-control.md) — ホーム画面到達後、任意のアプリをタップ座標に頼らず操作する手法(target/action直接呼び出し)
+- [unlockmailalert-tweak.md](unlockmailalert-tweak.md) — 上記を実際のJailbreak tweakに落とし込んだ、ロック解除の度に自動通知する実装
+- [frida-ios-crash-avoidance-rules.md](frida-ios-crash-avoidance-rules.md) — 全プロジェクトに共通するFrida安全ルールの早見表
