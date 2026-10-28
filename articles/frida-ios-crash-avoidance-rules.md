@@ -1,6 +1,6 @@
 # iOS + Fridaでのクラッシュ回避ルール集(早見表)
 
-iPhone 8 Plus(iOS 16.7.16, palera1n rootful)でのFrida調査・tweak開発を通じて積み上がった、どのプロジェクトにも共通する安全ルール。新しいFridaスクリプトを書く前に必ず目を通す。個別の発見の詳細は各記事([springboard-icon-visibility-force-touch.md](springboard-icon-visibility-force-touch.md)、[springboard-pip-internals.md](springboard-pip-internals.md)、[fastfreeze-background-app-killing.md](fastfreeze-background-app-killing.md)、[ios-touchless-wake-unlock.md](ios-touchless-wake-unlock.md)、[headless-app-launch-fbssystemservice.md](headless-app-launch-fbssystemservice.md))を参照。
+iPhone 8 Plus(iOS 16.7.16, palera1n rootful)でのFrida調査・tweak開発を通じて積み上がった、どのプロジェクトにも共通する安全ルール。新しいFridaスクリプトを書く前に必ず目を通す。個別の発見の詳細は各記事([springboard-icon-visibility-force-touch.md](springboard-icon-visibility-force-touch.md)、[springboard-pip-internals.md](springboard-pip-internals.md)、[fastfreeze-background-app-killing.md](fastfreeze-background-app-killing.md)、[ios-touchless-wake-unlock.md](ios-touchless-wake-unlock.md)、[headless-app-launch-fbssystemservice.md](headless-app-launch-fbssystemservice.md))を参照。実機で存在・型を確認済みのプライベートAPI本体の一覧は[private-api-discoveries-catalog.md](private-api-discoveries-catalog.md)にまとめてある。
 
 ## ハードルール(どのスクリプトにも適用)
 
