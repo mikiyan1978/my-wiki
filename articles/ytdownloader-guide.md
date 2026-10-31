@@ -12,7 +12,7 @@
 
 - 脱獄済みiOS端末(Sileoが使えること)
 - インターネット接続
-- 画質制限なしでダウンロードしたい場合は、空き容量 **約300MB以上**(後述のランタイム一式)
+- 空き容量 **約300MB以上**(後述のランタイム一式——これが無いとそもそもダウンロードできません)
 
 ---
 
@@ -33,25 +33,11 @@
 
 ---
 
-## STEP 3: yt-dlp本体を導入
+## STEP 3: フル画質ダウンロード用ランタイムの導入(実質必須)
 
-YTDownloaderはあくまで`yt-dlp`のラッパーであり、`yt-dlp`自体は同梱されていない。SSH、またはZeus/NewTermのような端末内ターミナルアプリから:
+> ⚠️ **ここが一番重要**: 当初「このステップは任意で、やらなくても360p程度は落とせる」と案内していましたが、実機検証の結果これは誤りでした。YouTube側が現在ほぼ全クライアントで新しい配信方式(SABR)を強制しており、**普通にapt/pipで手に入る程度のyt-dlpでは、画質を問わず全く何もダウンロードできません**(`ERROR: The page needs to be reloaded.`で毎回失敗)。まともに動かすには、新しいyt-dlpビルド(Python 3.11以上が必須)と、PO Token(Proof-of-Origin)を発行するローカルサーバーの両方が要ります。事実上、本ステップを飛ばすとアプリは使えないとお考えください。
 
-```
-pip3 install yt-dlp
-```
-
-アプリ初回起動時、`yt-dlp`が見つからない場合はアプリ内に正確なコマンドが表示されるので、それに従ってもよい。
-
-> ⚠️ **ここが一番の注意点**: yt-dlpの最新版は **Python 3.11以上を必須**としている。多くの脱獄用パッケージリポジトリ(Procursus等)で配布されているPythonは **3.9系**までで、そのままでは最新のyt-dlpが起動すらしない(`ImportError: Only Python versions 3.11 and above are supported by yt-dlp`)。この状態でも360p程度までのダウンロードは可能だが、それ以上の画質は後述のSTEP 4が必須。
-
----
-
-## STEP 4(推奨): フル画質ダウンロード用ランタイムの導入
-
-YouTube側のPO Token(Proof-of-Origin)要件により、360pを超える画質でのダウンロードには、単にyt-dlpがあるだけでは足りず、**PO Tokenを発行するローカルサーバー**が別途必要になる。これを動かすには新しめのPython(3.13)とNode.js 22が要る。
-
-これらを自前ビルドしてまとめたランタイム一式(約120MB・展開後約520MB)を配布しているので、以下のワンライナーを **root権限のターミナル(SSH等)** から実行するだけで導入できる:
+これら(Python 3.13 + Node.js 22 + PO Tokenサーバー)を自前ビルドしてまとめたランタイム一式(約120MB・展開後約520MB)を配布しているので、**root権限のターミナル(SSH等)** から以下のワンライナーを実行するだけで導入できる:
 
 ```
 curl -sL https://raw.githubusercontent.com/mikiyan1978/sileo-repo/main/scripts/ytdownloader_install_runtime_bundle.sh | sh
@@ -61,15 +47,15 @@ curl -sL https://raw.githubusercontent.com/mikiyan1978/sileo-repo/main/scripts/y
 - 導入後はアプリを再起動するだけで自動的に検知される。respring不要
 - 中身: Python 3.13インタプリタ + Node.js 22(`--jitless`) + [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider)
 
-導入しなかった場合、アプリは自動的に360p上限のフォールバック動作になる(エラーにはならない)。
+> 参考までに、多くの脱獄用パッケージリポジトリ(Procursus等)で配布されているPythonは3.9系までで、最新のyt-dlpはPython 3.11以上を必須としているため、`pip3 install yt-dlp`だけでは解決しません(`ImportError: Only Python versions 3.11 and above are supported by yt-dlp`)。
 
 ---
 
 ## トラブルシューティング
 
-- **「Cookieの有効期限が切れています」と出る/画質が上がらない**: Cookie取り込みは非公開・年齢制限動画のためのものであり、通常の公開動画の画質上限とは無関係。STEP 4のPO Tokenサーバーが本体。
+- **ダウンロードがすべて「ログを確認してください」で失敗する**: ほぼ確実にSTEP 3のランタイム未導入が原因。導入済みのはずなら、アプリを完全に再起動(タスクキル→再起動)してから再試行。
+- **「Cookieの有効期限が切れています」と出る**: Cookie取り込みは非公開・年齢制限動画のためのものであり、通常の公開動画のダウンロード可否とは無関係。
 - **ダウンロードが`exit -1`で失敗する**: ダウンロード中にアプリ側の停止ボタンを押すと出る正常な表示で、バグではない。
-- **全く起動しない/画質選択が360p止まり**: STEP 3のPythonバージョン要件を再確認。`python3 --version`が3.11未満ならSTEP 4が必須。
 
 ---
 
