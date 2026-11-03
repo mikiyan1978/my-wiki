@@ -1,0 +1,76 @@
+# YTDownloader TS(TrollStore版)インストールガイド
+
+YouTube動画をダウンロードできる自作アプリ **YTDownloader** のTrollStore版。脱獄なしで動く、公式YTDownloader(脱獄版)とは**完全に別アプリ**として動作します。bundle ID・URLスキーム・保存先フォルダ・Cookieファイルがすべて独立しているため、脱獄版と同時にインストールしても干渉しません。
+
+リリース: [GitHub Releases](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-trollstore-v1.0)
+
+---
+
+## 必要なもの
+
+- **TrollStore** がインストール済みのiOS端末
+- iOS 14以降
+- Wi-Fi接続(初回のランタイムダウンロード用、合計150MB程度)
+
+---
+
+## STEP 1: .tipaをダウンロード
+
+[GitHub Releases](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-trollstore-v1.0) から `YTDownloaderTrollStore.tipa` をダウンロード。
+
+- iPhone/iPadのSafariで直接開いてダウンロード、または
+- パソコンでダウンロードしてAirDropでiPhoneへ送る(「ファイル」アプリの「このiPhone内」などに保存)
+
+---
+
+## STEP 2: TrollStoreでインストール
+
+1. **TrollStore** アプリを開く
+2. 右上の **「+」** をタップ
+3. ダウンロードした `YTDownloaderTrollStore.tipa` を選択
+4. インストール完了後、ホーム画面に **「YTDownloader TS」**(紫系アイコン)が追加される
+
+> Safariから直接開いた場合は「TrollStoreで開く」を選べばそのままインストール画面に進みます。
+
+---
+
+## STEP 3: 初回起動時のランタイム設定
+
+YTDownloader TSはPython/yt-dlp/Node製の実行環境を内部で使っており、**初回起動時に一度だけ**この一式(合計150MB程度)をダウンロード・設定する必要があります。
+
+1. アプリを開くと「ランタイム一式が必要です」という画面が出る
+2. **「インストール開始」** をタップ
+3. ダウンロードが進み、展開・設定が自動で行われる
+4. **ここで「この端末でダウンロード機能を正しく動かすには、もう一段階の設定が必要です」という画面が出たら**:
+   - 内容を読んで **「続ける」** をタップ
+   - 自動的に **TrollStoreアプリに切り替わる**
+   - TrollStoreの確認画面が出たら **「Install」** をタップ
+   - 数秒でYTDownloader TSが**自動的に再起動**して戻ってくる
+
+> この「TrollStoreに切り替わって Install をタップする」操作は、TrollStoreが新しいアプリを正式にインストールするときの標準的な確認ステップです。見慣れない画面に切り替わって驚くかもしれませんが、問題ありません。指示通り進めれば自動的に元のアプリに戻ります。
+
+設定が終わると通常の画面(動画URLを貼り付けてダウンロードする画面)が使えるようになります。
+
+---
+
+## よくあるトラブル
+
+| 症状 | 原因・対処 |
+|---|---|
+| 「ランタイム一式」画面に何度も戻ってくる | ダウンロードが完了する前にアプリを閉じた可能性。もう一度「インストール開始」から試す |
+| 「自動署名がタイムアウトしました」と表示される | TrollStoreの確認画面を見逃していないか確認。再試行すれば通常は解決する |
+| YouTubeの共有メニューからYTDownloader TSを選んでも脱獄版が開く | 両者は別のURLスキームを使うため通常は起きないはずだが、もし起きた場合はYTDownloader TSを一度再インストールしてみる |
+| ダウンロードがうまくいかない(動画が取得できない) | ランタイム設定が正しく完了しているか確認(STEP 3を再確認)。YouTube側の仕様変更が原因のこともある |
+
+---
+
+## 脱獄版との違い
+
+| | 脱獄版(Sileo配布) | TrollStore版(本ガイド) |
+|---|---|---|
+| 必要環境 | palera1nなどの脱獄 | TrollStoreのみ(脱獄不要) |
+| ダウンロード高速化(aria2c) | ◯(apt経由) | ◯(アプリに同梱) |
+| 初回セットアップ | ランタイムダウンロードのみ | ランタイムダウンロード + (環境により)TrollStoreでの再署名確認 |
+| 保存先・Cookie・アイコン | 脱獄版専用 | TrollStore版専用(完全に分離) |
+
+機能面はほぼ同一。脱獄していない端末で使いたい場合はTrollStore版を選んでください。
