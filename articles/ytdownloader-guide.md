@@ -4,6 +4,8 @@
 
 配布元: [mikiyan1978.github.io/sileo-repo](https://mikiyan1978.github.io/sileo-repo/)
 
+> 脱獄していない端末の場合は [YTDownloader TS(TrollStore版)インストールガイド](#/view/ytdownloader-trollstore-guide) を参照。
+
 > ⚠️ **ルートフル専用として開発・検証**: iPhone 8 Plus / iOS 16.7.16 / palera1n rootful で開発・実機検証済み。コード側はルートレス(Dopamine等、`/var/jb`配下)のパス構成にも対応させてあるが、**実際のルートレス端末での動作確認はまだ行っていない**。
 
 ---
