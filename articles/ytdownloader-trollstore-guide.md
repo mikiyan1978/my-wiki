@@ -2,6 +2,8 @@
 
 YouTube動画をダウンロードできる自作アプリ **YTDownloader** のTrollStore版。脱獄なしで動く、公式YTDownloader(脱獄版)とは**完全に別アプリ**として動作します。bundle ID・URLスキーム・保存先フォルダ・Cookieファイルがすべて独立しているため、脱獄版と同時にインストールしても干渉しません。
 
+English: [YTDownloader TS (TrollStore) Guide](#/view/ytdownloader-trollstore-guide-en)
+
 リリース: [GitHub Releases](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-trollstore-v1.0)
 
 ---
@@ -10,7 +12,7 @@ YouTube動画をダウンロードできる自作アプリ **YTDownloader** のT
 
 - **TrollStore** がインストール済みのiOS端末
 - iOS 14以降
-- Wi-Fi接続(初回のランタイムダウンロード用、合計150MB程度)
+- Wi-Fi接続(初回のランタイムダウンロード用、約120MB)
 
 ---
 
@@ -36,7 +38,7 @@ YouTube動画をダウンロードできる自作アプリ **YTDownloader** のT
 
 ## STEP 3: 初回起動時のランタイム設定
 
-YTDownloader TSはPython/yt-dlp/Node製の実行環境を内部で使っており、**初回起動時に一度だけ**この一式(合計150MB程度)をダウンロード・設定する必要があります。
+YTDownloader TSはPython/yt-dlp/Node製の実行環境を内部で使っており、**初回起動時に一度だけ**この一式(約120MB)をダウンロード・設定する必要があります。
 
 1. アプリを開くと「ランタイム一式が必要です」という画面が出る
 2. **「インストール開始」** をタップ
