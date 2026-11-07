@@ -88,7 +88,7 @@ Choose in "Settings" → "Sponsor segments (SponsorBlock)". The default is Off.
 | Cut them out | Removes those segments from the video |
 
 - Segments come from a public database registered by volunteers (sponsor.ajay.app). Only the first 4 characters of a hash are sent, not the video ID itself.
-- "Cut" works accurately on AV1/VP9 videos (the normal format for best quality). **On H.264 MP4 (for example in Compatibility mode) it may fail to cut.** In that case the video is saved uncut and the app shows "Done (cutting the sponsor segments failed)".
+- "Cut" trims and joins the video without re-encoding, so it is fast and loses no quality. On H.264 MP4 (for example in Compatibility mode) the normal way of joining can fail; the app then switches to another method automatically. The cut points can be off by tens of milliseconds up to a few seconds because of keyframes. Only if that also fails is the video saved uncut, with "Done (cutting the sponsor segments failed)" shown.
 
 ### Recording live streams
 
