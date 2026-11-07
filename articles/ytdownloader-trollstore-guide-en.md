@@ -70,7 +70,7 @@ When setup is done, the normal screen (paste a video URL to download) becomes av
 ### Quality and formats
 
 - You can set the default quality in "Settings": Ask Every Time / Always Best Quality / Always 1080p / Always 720p / Audio Only.
-  - With a default set, a link handed over **from another app** (such as the Share menu) first asks "Download this link?" for safety; tapping "Download" starts it at the default quality. Pasting inside the app starts without asking.
+  - With a default set, a link handed over **from another app** (such as the Share menu) first asks "Download this link?" for safety; tapping "Download" starts it at the default quality. If "Sites that need a login" is anything other than "Don't use", links to sites other than YouTube are confirmed regardless of the default quality, and the prompt says the saved login will be used. Pasting inside the app starts without asking.
 - **Audio only**: MP3 (with title, artist and cover art) or FLAC (with title and artist).
 - **With subtitles**: Choose "Download with Subtitles" in the quality picker to get an MKV with the subtitles embedded. The subtitle language is set in "Settings" → "Subtitle language": Japanese + English (default) / Japanese only / English only. An all-languages option is not offered, because YouTube limits it and the download would fail.
 
