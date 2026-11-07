@@ -49,6 +49,7 @@ YTDownloader TS uses a runtime built from Python, yt-dlp and Node internally. Yo
    - When TrollStore shows its confirmation screen, tap **"Install"**
    - After a few seconds YTDownloader TS **restarts automatically** and you are back in the app
 
+> Once set up, the runtime is kept in the app's data area, which survives app updates. You do not need to repeat these steps on later updates.
 > Switching to TrollStore and tapping Install is the standard confirmation step TrollStore uses when it officially installs a new app. An unfamiliar screen may surprise you, but it is fine. Follow the instructions and you will return to the app automatically.
 
 When setup is done, the normal screen (paste a video URL to download) becomes available.
@@ -142,7 +143,7 @@ Choose in "Settings" → "Sites that need a login (other than YouTube)". Of the 
 | The "Runtime Required" screen keeps coming back | You may have closed the app before the download finished. Try again from "Start Install" |
 | "Automatic signing timed out" is shown | Check whether you missed the TrollStore confirmation screen. Retrying usually fixes it |
 | Choosing YTDownloader TS from YouTube's share menu opens the jailbreak edition | The two use different URL schemes, so this should not happen. If it does, try reinstalling YTDownloader TS once |
-| After updating the app, "Runtime Required" came back | Replacing the app also replaces the runtime kept inside it, so STEP 3 (download and the TrollStore confirmation) is needed again. Your settings and saved videos are not lost |
+| After updating the app, "Runtime Required" came back | This happens **only once, when updating from a version older than this one** (older versions kept the runtime inside the app, so an update wiped it). Do STEP 3 again. Your settings and saved videos are not lost. **From this version on, the runtime survives updates**, so STEP 3 does not need to be repeated |
 | The size during a download shows only "129.4 MB", with no total | For formats whose total is not known in advance, only the bytes actually written are shown, and the total is fixed when the download finishes. (YouTube's split formats show the total from the start.) |
 | Downloads do not work (the video cannot be fetched) | Check that the runtime setup finished correctly (see STEP 3). A YouTube-side change can also be the cause |
 
