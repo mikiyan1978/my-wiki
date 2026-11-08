@@ -91,6 +91,15 @@ Choose in "Settings" → "Sponsor segments (SponsorBlock)". The default is Off.
 - Segments come from a public database registered by volunteers (sponsor.ajay.app). Only the first 4 characters of a hash are sent, not the video ID itself.
 - "Cut" trims and joins the video without re-encoding, so it is fast and loses no quality. On H.264 MP4 (for example in Compatibility mode) the normal way of joining can fail; the app then switches to another method automatically. The cut points can be off by tens of milliseconds up to a few seconds because of keyframes. Only if that also fails is the video saved uncut, with "Done (cutting the sponsor segments failed)" shown.
 
+### Progress display while downloading
+
+When video and audio are delivered separately (for example high-quality YouTube), each of the video and audio rows shows its percentage, speed and remaining time (ETA).
+
+- The speed updates about once per second and does not fall back to 0 while data is arriving.
+- The percentage rises steadily instead of jumping up at the start and then stalling.
+- The display can lag by up to about a second.
+- A row whose stream has not started yet shows "Waiting".
+
 ### Recording live streams
 
 Give the app the URL of a stream that is on air and it records it.
