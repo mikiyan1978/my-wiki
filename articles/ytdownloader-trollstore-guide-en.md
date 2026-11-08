@@ -107,6 +107,8 @@ In "Settings" you can choose the following. Each applies to downloads you start 
 | Setting | Choices |
 |---|---|
 | Network | Allow mobile data / **Wi-Fi only** (nothing starts while only mobile data is available; the queue waits for Wi-Fi and carries on by itself. For a single video you are asked first and can allow mobile data just that once) |
+| When the queue moves | Always / **Only while charging** (the waiting queue moves only while the device is charging; plug in overnight to download everything. Keep the app open, or open it after charging starts, and it carries on. Downloads you start by hand are not affected) |
+| Downloads at once | One at a time / Up to 2 / Up to 3 (the waiting queue is processed in parallel. The large progress display follows the first one; the others show progress on their queue rows. The device gets warmer and the battery drains faster. The speed limit applies to each download) |
 | Download speed limit | No limit / 512 KB/s / 1 MB/s / 2 MB/s / 5 MB/s / 10 MB/s (applies to normal downloads, not to live recording or section-only downloads) |
 | File name | Title / Uploader - Title / Date Title / Title [video ID] |
 | Audio-only format | MP3 / M4A / Opus / FLAC / WAV |
@@ -116,6 +118,13 @@ In "Settings" you can choose the following. Each applies to downloads you start 
 - The speed limit was checked on a real device: with "1 MB/s" the speed settled at about 0.9 MiB/s.
 - FLAC, Opus and WAV may not open in this device's built-in player; use "Open in another app" then.
 
+### Subtitles only
+
+"💬 Save subtitles only (SRT)" on the quality screen saves just the subtitle files, without the video. The languages follow "Subtitle language" in Settings (for example Japanese + English).
+
+- They are saved with the language in the name, like "Name.ja.srt", and appear in the Library with a 💬. Since the video is not downloaded, you can still save the whole video later.
+- If the video has no subtitles in the chosen languages, you are told so.
+
 ### Download only a section
 
 On the quality screen, "✂️ Download only a section" lets you choose a start and an end with wheels and saves just that part at the best quality (not available for a live stream that is on air).
@@ -124,12 +133,17 @@ On the quality screen, "✂️ Download only a section" lets you choose a start 
 - Cuts follow the video's keyframes, so the start can be several seconds early and the clip longer than you chose. On a real device, asking for 30–45 seconds gave a clip of about 25 seconds.
 - Progress shows as a percentage and remaining time, like any other download.
 
+### History
+
+The "History" tab lists finished and failed downloads, newest first (the latest 200, kept when you close the app). Tap a failed one, or swipe it left and choose "Retry", to start it again. "Clear" at the top right empties the list (downloaded files are not deleted).
+
 ### Choosing a range of a playlist
 
 When you give a playlist URL you are first asked how much to add to the queue.
 
 - "Add all", or "Choose a range..." to pick the first and last position with wheels.
 - Videos already in the library are still skipped automatically.
+- "Subscribe" does not add the videos that are there now; it adds **only new ones from then on** to the queue automatically. They are checked for when you open the app, if an hour or more has passed since the last check. The list of subscriptions and "Check now" are in "Settings" → "Auto-fetch new videos". Swipe left to unsubscribe.
 
 ### Recording live streams
 
@@ -171,6 +185,8 @@ Choose in "Settings" → "Sites that need a login (other than YouTube)". Of the 
 
 ### Library
 
+- **Selecting several**: "Select" at the top left lets you pick several videos. The buttons below **export** them (Photos, Files, share), **extract audio**, or **delete** them. Deleting also removes the thumbnail and other files that belong to them.
+- **Extract audio**: pulls just the audio out of saved videos as MP3 / M4A / Opus / FLAC / WAV. No need to download again, and the videos stay. For one video, use "Extract audio..." on its export button.
 - **Search and sort**: type part of a title or channel name in the search field to narrow the list (with several words, only items containing all of them). While searching, every channel that matched is open. The button at the top right sorts by newest, oldest, largest or name (the choice is remembered).
 - **Switch by platform**: Once you have downloaded from two or more sites, tabs appear at the top: "All | YouTube | Niconico | SoundCloud …". Only the videos from the selected site are shown, grouped by channel. (The selected tab is remembered.) The save folder is still a single folder.
 - The total size of your downloads and the free space on the device are shown at the top.
