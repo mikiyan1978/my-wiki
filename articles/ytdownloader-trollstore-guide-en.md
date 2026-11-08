@@ -71,7 +71,7 @@ When setup is done, the normal screen (paste a video URL to download) becomes av
 
 - You can set the default quality in "Settings": Ask Every Time / Always Best Quality / Always 1080p / Always 720p / Audio Only.
   - With a default set, a link handed over **from another app** (such as the Share menu) first asks "Download this link?" for safety; tapping "Download" starts it at the default quality. If "Sites that need a login" is anything other than "Don't use", links to sites other than YouTube are confirmed regardless of the default quality, and the prompt says the saved login will be used. Pasting inside the app starts without asking.
-- **Audio only**: MP3 (with title, artist and cover art) or FLAC (with title and artist).
+- **Audio only**: MP3 (with title, artist and cover art), M4A, Opus, FLAC or WAV (with title and artist). The default format is set in "Settings" → "Audio-only format" (see "Download settings" below).
 - **With subtitles**: Choose "Download with Subtitles" in the quality picker to get an MKV with the subtitles embedded. The subtitle language is set in "Settings" → "Subtitle language": Japanese + English (default) / Japanese only / English only. An all-languages option is not offered, because YouTube limits it and the download would fail.
 
 ### Chapters
@@ -99,6 +99,37 @@ When video and audio are delivered separately (for example high-quality YouTube)
 - The percentage rises steadily instead of jumping up at the start and then stalling.
 - The display can lag by up to about a second.
 - A row whose stream has not started yet shows "Waiting".
+
+### Download settings
+
+In "Settings" you can choose the following. Each applies to downloads you start from then on.
+
+| Setting | Choices |
+|---|---|
+| Network | Allow mobile data / **Wi-Fi only** (nothing starts while only mobile data is available; the queue waits for Wi-Fi and carries on by itself. For a single video you are asked first and can allow mobile data just that once) |
+| Download speed limit | No limit / 512 KB/s / 1 MB/s / 2 MB/s / 5 MB/s / 10 MB/s (applies to normal downloads, not to live recording or section-only downloads) |
+| File name | Title / Uploader - Title / Date Title / Title [video ID] |
+| Audio-only format | MP3 / M4A / Opus / FLAC / WAV |
+| Thumbnail | Don't save / Also save to Photos when a download finishes |
+
+- You can also pick the audio format each time, with "🎵 Audio only (choose format)" on the quality screen. MP3 carries cover art; M4A, Opus and WAV carry the title and other tags.
+- The speed limit was checked on a real device: with "1 MB/s" the speed settled at about 0.9 MiB/s.
+- FLAC, Opus and WAV may not open in this device's built-in player; use "Open in another app" then.
+
+### Download only a section
+
+On the quality screen, "✂️ Download only a section" lets you choose a start and an end with wheels and saves just that part at the best quality (not available for a live stream that is on air).
+
+- The file name ends with the section, for example "[clip 0m30s-0m45s]". It is treated separately from the whole video, so you can still save the full video later.
+- Cuts follow the video's keyframes, so the start can be several seconds early and the clip longer than you chose. On a real device, asking for 30–45 seconds gave a clip of about 25 seconds.
+- Progress shows as a percentage and remaining time, like any other download.
+
+### Choosing a range of a playlist
+
+When you give a playlist URL you are first asked how much to add to the queue.
+
+- "Add all", or "Choose a range..." to pick the first and last position with wheels.
+- Videos already in the library are still skipped automatically.
 
 ### Recording live streams
 
@@ -140,6 +171,7 @@ Choose in "Settings" → "Sites that need a login (other than YouTube)". Of the 
 
 ### Library
 
+- **Search and sort**: type part of a title or channel name in the search field to narrow the list (with several words, only items containing all of them). While searching, every channel that matched is open. The button at the top right sorts by newest, oldest, largest or name (the choice is remembered).
 - **Switch by platform**: Once you have downloaded from two or more sites, tabs appear at the top: "All | YouTube | Niconico | SoundCloud …". Only the videos from the selected site are shown, grouped by channel. (The selected tab is remembered.) The save folder is still a single folder.
 - The total size of your downloads and the free space on the device are shown at the top.
 - From each video's share button you can **Save to Photos** (only for supported formats such as MP4) or **Save to Files / Share**.
