@@ -93,6 +93,7 @@ printf 'get -f Documents/Data/Application/<UUID>/Documents/Foo.utm/Data/debug.lo
 - 使えるコマンド: `ls [-l]` `get` `put` `mkdir` `mv` `rm` `info`。
 - UTMのコンテナUUIDは、LiveContainerの`Data/Application`直下のフォルダのうち、`LCContainerInfo.plist`の時刻が取り込んだ時刻に近いもの、またはUTMのログ(`/var/mobile/Containers/Data/Application/.../Documents/Data/Application/<UUID>/`)から分かる。
 - 設定ファイルの書き換え(`config.plist`)も直接できる。UTMを閉じて開き直すと反映される。
+- **注意: `put -f` は、既存ファイルより短い内容で上書きすると、古い内容の後ろ側が残ることがある**(`config.plist`で確認。XMLの`</plist>`の後に古い内容のゴミが付き、標準のパーサだと`junk after document element`になる。UTMは先頭の正しい部分を読むため動いた)。書き換えは **先に`rm`してから`put`** にし、そのあと`get`し直して内容が一致するか確かめる。
 - `debug.log`の取得で、iPhone上でQEMUが何をしたかをMacから読める。
 
 ---
