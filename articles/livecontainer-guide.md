@@ -102,3 +102,43 @@ SideStore機能を保持したまま、LiveContainer内で無制限にアプリ�
 ツール自体はコミュニティの有志が無償で開発・維持しているものです。不具合報告や要望は各GitHub Issueへ、敬意を持って投稿しましょう。
 
 手順・対応状況は頻繁に変わるため、実行前に必ず上記リンク先の最新版を確認してください。
+
+---
+
+## iOS 26.6.2での実機検証メモ(iPad Pro / iPhone 14 Pro、2026年11月)
+
+上の手順どおりに進めてもiOS 26.4以降ではつまずく点が多かったため、実際に起きたことと回避策を記録します。
+
+### SideStoreにログインできない(エラー -80045)
+
+- iloader v2.4.1でSideStore 0.7.0を入れても、サインイン時に **-80045** で失敗する。Appleの認証(anisette)まわりの変更が原因とされ、公式に修正済みとは言えない状態。
+- SideStoreの「On-Device Anisette」オフ、サーバー切替、`adi.pb`のリセットなどの回避策は、今回は**効かなかった**。
+- 結論: SideStoreなしで **LiveContainer単体** を使う(iloaderでLiveContainerを直接インストール)。
+
+### 無料Apple IDの制約(証明書は1つだけ)
+
+- 無料Apple IDは**開発証明書を1つしか持てない**。別の署名ツール(SideInstallerなど)が先に証明書を作っていると、`7460`や「already holds a development certificate」で失敗する。
+- アプリは3つまで、プロファイルは7日で失効。LiveContainerに取り込んだアプリはこの枠を消費しない。
+
+### LiveContainer単体でJIT-less(JITなし)モードを使う
+
+iOS 26では、SideStoreなしのLiveContainerがJIT-lessで動くために、**署名用の証明書(.p12)とパスワードをLiveContainerにインポート**する必要がある。
+
+1. LiveContainer設定の「JIT-Less」で `.p12` とパスワードを指定。
+2. **「JIT-Less Mode Diagnose」→「Test JIT-Less Mode」** を実行して通ることを確認。
+- 診断でテスト用dylibの署名が無効と出た場合、`.p12`の中身の証明書が**失効している**ことがある。端末内のプロビジョニングプロファイル(`ideviceprovision`で取得できる)に入っている`DeveloperCertificates`のうち有効なもの(`openssl ocsp`でAppleのOCSPに問い合わせて`good`と返るもの)と、署名鍵(iloaderがmacのキーチェーンに保存している)を組み合わせて`.p12`を作り直すと通った。
+- 同じApple IDなら、iPadとiPhoneで**同じ証明書(同じ.p12)**を使える。作業後、`.p12`はiCloudやダウンロードフォルダに残さず削除する。
+
+### 取り込めないアプリ・動かないアプリ
+
+- **TrollStore専用アプリ**(`platform-application`、`com.apple.private.security.no-sandbox`などの特別な権限が必要)は、LiveContainerの通常署名では権限を付けられず動かない。
+- **再署名したFilza**: 起動時に「Main binary was modified. Please reinstall Filza」「Filzaをアクティベートできませんでした」と出て使えない(自己改変チェックとライセンス確認)。ファイル管理は、App Store版のアプリを使うほうが確実。
+- **ファイル選択画面(UIDocumentPicker)**: LiveContainer内のアプリでは、iCloud Driveのファイルをタップしても**反応しないことがあった**。回避策は「UTM」の記事を参照(Macから`afcclient`で直接コピーする方法)。
+
+### ソース(AltStore形式)追加の注意
+
+LiveContainerの「ソース」タブに追加するURLは、**必ず`curl`などで実在を確認**してから使う。記事に載っていたURL(LiveContainer公式を名乗るJSONなど)が404のことがあった。確認できたもの: `https://community-apps.sidestore.io/sidecommunity.json`、`https://provenance-emu.com/apps.json`、`https://quarksources.github.io/altstore-complete.json`、`https://ish.app/altstore.json`、`https://flyinghead.github.io/flycast-builds/altstore.json`(いずれもHTTP 200、JSON読み込み可)。
+
+### JITを使うUTM
+
+UTMをJITで動かす手順(StikDebugのペアリング、JIT起動スクリプト`legacy.js`)は [StikDebug ガイド](./stikdebug-guide.md) と [UTM ガイド](./utm-on-iphone-guide.md) を参照。

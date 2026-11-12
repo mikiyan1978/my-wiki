@@ -120,7 +120,43 @@ LiveContainerと組み合わせている場合は、LocalDevVPNをONにした状
 | 「Connection dropped」またはループバック関連のエラー | iOSバージョンの対応状況を確認。ベータ版OSでは警告が出ることがある |
 | Heartbeatエラー | LocalDevVPNがONになっているか、Wi-Fiに接続されているかを確認。ペアリングファイルの問題であることも多い |
 | ペアリングファイル関連のエラー全般 | 端末のロックを解除し「このコンピュータを信頼」した状態で、ペアリングファイルを一から取得し直す |
+| `Failed to create tunnel: Socket(... ConnectionReset ... "Connection reset by peer")` / JITタブに「Device isn't reachable」 | LocalDevVPNが接続済みでも出る。**iloaderで書き出したペアリングファイルがiOS 26.6.2側に拒否されている**ことが原因の可能性が高い(後述の「iOS 26.6.2での実機検証」)。`idevice_pair`の**Remote pairing**で作り直す |
+| 設定 → デベロッパ に「Pair with StikDebug」が出ない | StikDebugの「Pair a Device」(オンデバイスペアリング)は、紹介記事によると**iOS 27以降の機能**。iOS 26.6.2ではPCでのペアリングファイル作成が必要 |
+| UTMを起動しても画面が真っ黒のまま(クラッシュはしない) | TXM端末でJITスクリプト(`legacy.js`)が未設定。UTM(QEMU)が最初のJIT用メモリ確保(`BRK #0x69`)でデバッガに止められたままになる(後述) |
 | それでも解決しない | ログ・スクリーンショットを添えて[StikDebug公式Discord](https://stikdebug.xyz/)で質問 |
+
+---
+
+## iOS 26.6.2での実機検証(iPhone 14 Pro、2026年11月)
+
+LiveContainer内のUTM(通常版)をJITで動かすまでに確認できたことをまとめます。
+
+### 症状: `Failed to create tunnel ... Connection reset by peer`
+
+- LocalDevVPN接続済み、ペアリングファイルをインポート済みでも、StikDebugのJITタブに「Device isn't reachable」、設定画面に「Connection Error (Code 1: Failed to create tunnel: Socket(... code: 54 ... ConnectionReset ...)」と出る。
+- 端末のsyslog(`idevicesyslog`)を見ると、StikDebugはVPN(utun)経由で端末側の`remotepairingdeviced`(ポート49152)には**つながっている**が、サービス側が認証情報の照会(キーチェーン検索)の直後に**データを返さず切断**していた。つまり通信路ではなく**ペアリングの認証情報が受け入れられていない**。
+- 同じ症状は[StikDebug Issue #474](https://github.com/StikDebug/StikDebug/issues/474)にも報告されており(iOS 26.7、iloaderで作ったペアリングファイル)、報告者は`idevice_pair`で作り直して解決している。
+
+### 解決策: `idevice_pair`の「Remote pairing」でペアリングファイルを作り直す
+
+1. Macで **[idevice_pair](https://github.com/jkcoxson/idevice_pair/releases)**(macOS版は`idevice_pair--macos-universal.dmg`、Developer ID署名・公証済み)を入手して起動する。
+2. iPhoneをUSB接続してロック解除し、「信頼」する。
+3. 画面上部で端末を選び、「Pairing file」欄で **Remote pairing**(Lockdownではない)を選んで **Create**。
+4. **Validate** を押し、**「Works」(緑)** と出ることを確認する。
+5. 「Send to an app」の **StikDebug (Sideloaded)** を押す(または **Save to file…** で保存し、StikDebugの Settings → Import Pairing File で取り込む)。
+6. StikDebugのJITタブで更新(↻)。LiveContainerとStikDebugが一覧に出れば成功。
+
+> 補足: iloaderの「Manage Pairing File」で作るファイルは、iOS 26.6.2ではこの用途に使えなかった(トンネル作成が拒否された)。
+
+### 症状: UTMが真っ黒のまま止まる(クラッシュしない)
+
+- LiveContainerのUTMで「JITで起動」をオンにしても、「JIT起動スクリプト」が未設定だと、仮想マシンが**起動しても何も表示されない**。ディスプレイ、シリアルとも真っ黒。
+- UTMのデバッグログ(`debug.log`)ではQEMUは正常に起動し、`RESUME`イベントも出ている。QEMU内部ログ(`-d in_asm`)では最初の命令ブロック(`0x40000000`)を変換した直後から何も記録されない。
+- 原因: TXM端末ではJIT用メモリの確保をアプリが **`BRK #0x69`** 命令でデバッガに依頼する。公式の`legacy.js`はこの依頼に応答して`prepare_memory_region`を呼び、実行を再開する。**スクリプトがないと、アプリはその命令で止まったまま**(デバッガ接続中なのでクラッシュレポートも出ない)。
+- 対処: StikDebugの Settings → Behavior で **Always Run Scripts** をオン。LiveContainerでUTMの設定を開き、「JIT起動スクリプト」で **`legacy.js`** を選ぶ(StikDebug公式リポジトリの`StikDebug/Scripts/legacy.js`。上のSTEP 4の対応表どおりUTMは`legacy.js`)。
+- 結果: JITなしのUTM SEでは起動に数分かかったAlpine Linuxが、**約8秒**で起動した。
+
+> 補足: LiveContainerの「マルチタスク(小窓)」で起動したUTMは、別プロセス(LiveProcess)として動き、`scene-update watchdog`(0x8BADF00D)で強制終了された。マルチタスクをオフにした通常起動のほうが安定した。
 
 ---
 
