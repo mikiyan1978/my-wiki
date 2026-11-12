@@ -1,8 +1,77 @@
-# YTDownloaderをLiveContainerで動かす(Python+yt-dlpをアプリ内に組み込む実験)
+# YTDownloaderをLiveContainerで動かす(Python+yt-dlpをアプリ内に組み込む)
 
 関連: [YTDownloader TS(TrollStore版)](./ytdownloader-trollstore-guide.md) / [LiveContainer ガイド](./livecontainer-guide.md) / [UTM on iPhone](./utm-on-iphone-guide.md)
 
-TrollStore版のYTDownloaderは、LiveContainerに入れても動きません。そこで「外部プログラムを起動せず、すべて同一プロセスの中で動かす」形に作り替えられるかを、実験アプリで確かめた記録です。端末は iPhone 14 Pro(A16)、iOS 26.6.2、LiveContainer(JITなし)。
+TrollStore版のYTDownloaderは、LiveContainerに入れても動きません。そこで「外部プログラムを起動せず、すべて同一プロセスの中で動かす」形に作り替えられるかを、実験アプリで確かめ、その後、実アプリ(YTDownloader)に組み込んで **LiveContainer 版**として配布した記録です。端末は iPhone 14 Pro(A16)、iOS 26.6.2、LiveContainer(JITなし)。
+
+---
+
+## どちらの版を入れる?
+
+アプリは同じソースから作っていますが、端末の環境によって入れる版が違います。LiveContainer 版の詳細は [YTDownloaderをLiveContainerで動かす](./ytdownloader-livecontainer-port.md) を参照してください。
+
+| あなたの環境 | 入れる版 | 入れ方 |
+|---|---|---|
+| **TrollStore が使える** | **TrollStore 版**(`.tipa`) | TrollStore で開いてインストール |
+| TrollStore が使えない。**LiveContainer** が使える | **LiveContainer 版**(`.ipa`) | LiveContainer の「ソース」に追加するか、「+」から IPA を取り込む |
+
+### 端末の iOS バージョンで見る
+
+| 端末の iOS | TrollStore 版 | LiveContainer 版 |
+|---|---|---|
+| 13 以下 | 使えない | 使えない |
+| 14.0 〜 15.x | 使える | 使えない(LC 版は iOS 16.0 以降) |
+| 16.0 〜 16.6.1、16.7 RC(20H18)、17.0 | 使える | 使える |
+| 16.7(RC 以外)、17.0.1 以降(18、26 を含む) | 使えない | 使える |
+
+- TrollStore 自体が対応する iOS は、公式の記載では「14.0 beta 2 〜 16.6.1、16.7 RC(20H18)、17.0」です。16.7(RC 以外)と 17.0.1 以降は、今後も対応されない見込みと書かれています([TrollStore の README](https://github.com/opa334/TrollStore))。
+- LiveContainer 自体は iOS/iPadOS 15 以降で、AltStore 2.0 以降または SideStore 0.6.0 以降で入れます([LiveContainer の README](https://github.com/LiveContainer/LiveContainer))。このアプリの LC 版は、最低 iOS 16.0 に設定しています。
+- アプリ本体の最低バージョンは、TrollStore 版が iOS 14.0、LC 版が iOS 16.0 です。
+
+### 機能の違い
+
+| | TrollStore 版 | LiveContainer 版 |
+|---|---|---|
+| 最高画質(最大2160p)の保存 | できる | できる(2160p は AV1 が多く、A16 など AV1 非対応の端末では、アプリ内で再生できない) |
+| 音声のみ | MP3 / M4A / Opus / FLAC / WAV | M4A のみ |
+| 字幕の埋め込み、SponsorBlock | できる | できない |
+| 区間だけのダウンロード | できる | 未対応(ffmpeg が必要なため) |
+| 映像と音声の結合 | ffmpeg | AVFoundation(H.264 または AV1 の mp4 と、m4a) |
+| 動画を渡す方法 | 共有メニュー、リンクのコピー | リンクをコピーして貼り付け |
+| yt-dlp の更新 | アプリ内で更新 | アプリの入れ替えで更新 |
+| 初回の準備 | ランタイムをダウンロード(約120MB、展開後は約520MB) | なし(アプリに同梱、アプリは約50MB) |
+
+迷ったら、TrollStore が使えるなら TrollStore 版を選んでください(機能が多い)。両方入れても干渉しません(bundle ID が別です)。入れた版が環境に合っていないときは、アプリを開くと案内が出ます。
+
+LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT なし)で数本の動画です。年齢制限・ライブ・メンバー限定は未確認です。
+
+## 実アプリへの組み込みと配布
+
+実験で確かめた方式を、YTDownloader 本体のソースに組み込みました(同じソースを `-DYTD_LC=1` でコンパイルすると LiveContainer 版になります)。ソースは `mikiyan1978/iOSTweaks` の `YTDownloaderTrollStore/`、LC 版の部品は `LiveContainer/` にあります。
+
+### 入れ方
+- **LiveContainer の「ソース」に追加:** `https://mikiyan1978.github.io/sileo-repo/lc-source.json`(AltStore 形式)。一覧から YTDownloader LC をインストールします。
+- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.0](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.0) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
+
+### 動作を確認できたこと(iPhone 14 Pro、iOS 26.6.2、JIT なし)
+- 動画の情報取得、画質の一覧、ダウンロード、映像と音声の結合、ライブラリでの再生。
+- 「互換性優先」をオンにすると、H.264 に絞られて再生できる。
+- ライブラリのサムネイルと再生時間の表示(下記)。
+
+### LC 版での置き換え・制限
+| 項目 | 内容 |
+|---|---|
+| サムネイル・再生時間 | ffprobe/ffmpeg が無いので、yt-dlp が保存した webp/png をそのまま使い、無ければ AVFoundation で1フレームを取り出す。再生時間と寸法も AVFoundation で読む |
+| Safari の Cookie | 読めない(LiveContainer の中のアプリは、他のアプリの領域にアクセスできない)。cookies.txt をファイルから読み込む方式のみ |
+| yt-dlp の更新 | アプリ内の更新機能は無効(設定画面からも外した)。更新はアプリの入れ替えで行う |
+| 動画を渡す方法 | 共有メニューからは直接開けない。YouTube でリンクをコピーし、アプリの「URLを貼り付けて開始」を押す |
+| 初回起動 | 「準備完了」の説明画面を表示。設定の「ヘルプ」から、使い方ガイドと説明画面をいつでも開き直せる |
+| 版の食い違い | TrollStore 版を LiveContainer の中で起動、または LC 版を LiveContainer の外で起動すると、アプリが案内を出す(LiveContainer が設定する環境変数 `LC_HOME_PATH` で判定) |
+
+### なぜ共有メニューから開けないのか
+LiveContainer 自身は共有シートの拡張機能を持っており、共有した URL を LiveContainer に渡せます。ところが、LiveContainer は `https`/`http` の URL を、ゲストアプリの URL スキームでは探さず、自分の Web 表示で開く作りです(ソースを読んで確認)。ゲストアプリを URL で指定して開くには `livecontainer://livecontainer-launch?bundle-name=…&open-url=<Base64>` を、ショートカットなどで組み立てる必要があり、利用者の手間が大きいので採用しませんでした。ゲストアプリの拡張機能も、LiveContainer の中では登録できません。
+
+---
 
 ---
 
@@ -43,7 +112,7 @@ LiveContainerの中のアプリは、他のプログラムを起動できませ�
 | Python + yt-dlp | PythonをアプリにC APIで組み込む。yt-dlpは純Python | 実機で動作 |
 | aria2c | 廃止。yt-dlp内蔵のダウンロードで足りた | 実機で動作 |
 | ffmpeg(結合) | AVFoundation(`AVMutableComposition` + `AVAssetExportSession`、パススルー) | 実機で動作 |
-| ffmpeg(WebM変換・字幕埋め込み・SponsorBlock切り出し・音声形式変換) | 代替なし。縮小または別実装 | 未対応 |
+| ffmpeg(WebM変換・字幕埋め込み・SponsorBlock切り出し・音声形式変換) | 代替なし。LC 版では対応しない(音声のみは M4A のまま保存) | 未対応(LC 版の仕様) |
 | Node + bgutil(PO token) | 不要だった(下記) | 確認した範囲では不要 |
 
 ---
@@ -134,12 +203,13 @@ JSなしでも、既定のクライアントで**1080p・1440p・2160pのURL**�
 
 ---
 
-## 次の課題
+## 今後の課題
 
-1. 実アプリ(YTDownloader)の機能を、サブプロセス依存から、アプリ内の実行に置き換える(取得・ダウンロード・結合の流れは、実験アプリで確認済み)。
-2. ffmpegに頼っていた機能(WebMの変換、字幕の埋め込み、SponsorBlockの切り出し、音声の形式変換)の代替。
-3. AV1・VP9を、アプリ内で再生したい場合の、ソフトウェアデコーダ。
-4. 年齢制限・ライブ・プレイリストなど、確認していない動画の種類。
+1. LC 版の画面から、使えない機能(音声形式の変換、字幕の埋め込み、SponsorBlock、区間のダウンロード)の項目を隠すか、無効と分かるようにする。
+2. yt-dlp を、アプリの入れ替えなしで更新する方法(新しい純 Python の wheel を `Documents` に置き、先に読み込む案)。
+3. AV1・VP9 を、アプリ内で再生したい場合の、ソフトウェアデコーダ。
+4. 年齢制限・ライブ・プレイリスト・メンバー限定など、確認していない動画の種類。
+5. iOS 15 での動作確認(LC 版の最低バージョンは、確認できていないので iOS 16.0 にしている)。
 
 ---
 

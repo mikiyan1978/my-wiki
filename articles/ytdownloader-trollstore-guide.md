@@ -8,10 +8,51 @@ English: [YTDownloader TS (TrollStore) Guide](#/view/ytdownloader-trollstore-gui
 
 ---
 
+## どちらの版を入れる?
+
+アプリは同じソースから作っていますが、端末の環境によって入れる版が違います。LiveContainer 版の詳細は [YTDownloaderをLiveContainerで動かす](./ytdownloader-livecontainer-port.md) を参照してください。
+
+| あなたの環境 | 入れる版 | 入れ方 |
+|---|---|---|
+| **TrollStore が使える** | **TrollStore 版**(`.tipa`) | TrollStore で開いてインストール |
+| TrollStore が使えない。**LiveContainer** が使える | **LiveContainer 版**(`.ipa`) | LiveContainer の「ソース」に追加するか、「+」から IPA を取り込む |
+
+### 端末の iOS バージョンで見る
+
+| 端末の iOS | TrollStore 版 | LiveContainer 版 |
+|---|---|---|
+| 13 以下 | 使えない | 使えない |
+| 14.0 〜 15.x | 使える | 使えない(LC 版は iOS 16.0 以降) |
+| 16.0 〜 16.6.1、16.7 RC(20H18)、17.0 | 使える | 使える |
+| 16.7(RC 以外)、17.0.1 以降(18、26 を含む) | 使えない | 使える |
+
+- TrollStore 自体が対応する iOS は、公式の記載では「14.0 beta 2 〜 16.6.1、16.7 RC(20H18)、17.0」です。16.7(RC 以外)と 17.0.1 以降は、今後も対応されない見込みと書かれています([TrollStore の README](https://github.com/opa334/TrollStore))。
+- LiveContainer 自体は iOS/iPadOS 15 以降で、AltStore 2.0 以降または SideStore 0.6.0 以降で入れます([LiveContainer の README](https://github.com/LiveContainer/LiveContainer))。このアプリの LC 版は、最低 iOS 16.0 に設定しています。
+- アプリ本体の最低バージョンは、TrollStore 版が iOS 14.0、LC 版が iOS 16.0 です。
+
+### 機能の違い
+
+| | TrollStore 版 | LiveContainer 版 |
+|---|---|---|
+| 最高画質(最大2160p)の保存 | できる | できる(2160p は AV1 が多く、A16 など AV1 非対応の端末では、アプリ内で再生できない) |
+| 音声のみ | MP3 / M4A / Opus / FLAC / WAV | M4A のみ |
+| 字幕の埋め込み、SponsorBlock | できる | できない |
+| 区間だけのダウンロード | できる | 未対応(ffmpeg が必要なため) |
+| 映像と音声の結合 | ffmpeg | AVFoundation(H.264 または AV1 の mp4 と、m4a) |
+| 動画を渡す方法 | 共有メニュー、リンクのコピー | リンクをコピーして貼り付け |
+| yt-dlp の更新 | アプリ内で更新 | アプリの入れ替えで更新 |
+| 初回の準備 | ランタイムをダウンロード(約120MB、展開後は約520MB) | なし(アプリに同梱、アプリは約50MB) |
+
+迷ったら、TrollStore が使えるなら TrollStore 版を選んでください(機能が多い)。両方入れても干渉しません(bundle ID が別です)。入れた版が環境に合っていないときは、アプリを開くと案内が出ます。
+
+LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT なし)で数本の動画です。年齢制限・ライブ・メンバー限定は未確認です。
+
+---
+
 ## 必要なもの
 
 - **TrollStore** がインストール済みのiOS端末
-- iOS 14以降
+- iOS 14.0以降(TrollStore自体が対応するのは、14.0 beta 2〜16.6.1、16.7 RC、17.0。それ以外のiOSでは、LiveContainer版を使う。上の表を参照)
 - Wi-Fi接続(初回のランタイムダウンロード用、約120MB)
 
 ---

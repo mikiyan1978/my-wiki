@@ -8,10 +8,27 @@ Release: [GitHub Releases](https://github.com/mikiyan1978/sileo-repo/releases/ta
 
 ---
 
+## Which edition should I install?
+
+The app is built from the same source, but there are two editions. Pick by your device.
+
+| Your iOS | TrollStore edition (`.tipa`) | LiveContainer edition (`.ipa`) |
+|---|---|---|
+| 13 or earlier | No | No |
+| 14.0 – 15.x | Yes | No (the LC edition needs iOS 16.0+) |
+| 16.0 – 16.6.1, 16.7 RC (20H18), 17.0 | Yes | Yes |
+| 16.7 (other than the RC), 17.0.1 and later | No | Yes |
+
+- TrollStore itself supports "14.0 beta 2 – 16.6.1, 16.7 RC (20H18), 17.0" per its README; later versions are not expected to be supported. LiveContainer itself requires iOS/iPadOS 15+ and is installed through AltStore 2.0+ / SideStore 0.6.0+.
+- If TrollStore works on your device, choose the TrollStore edition: it has more features (audio formats MP3/M4A/Opus/FLAC/WAV, subtitle embedding, SponsorBlock, section downloads). The LiveContainer edition saves audio-only as M4A and does not support those. Both can be installed side by side (different bundle IDs).
+- LiveContainer edition: add `https://mikiyan1978.github.io/sileo-repo/lc-source.json` to LiveContainer's Sources, or import the IPA from [GitHub Releases](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.0) with the "+" button. Details: [YTDownloader on LiveContainer (Japanese)](./ytdownloader-livecontainer-port.md).
+
+---
+
 ## What you need
 
 - An iOS device with **TrollStore** installed
-- iOS 14 or later
+- iOS 14.0 or later (TrollStore itself supports 14.0 beta 2 – 16.6.1, 16.7 RC, 17.0 only; see the table above)
 - A Wi-Fi connection (for the first-launch runtime download, about 120 MB)
 
 ---
