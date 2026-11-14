@@ -33,12 +33,13 @@ TrollStore版のYTDownloaderは、LiveContainerに入れても動きません。
 | | TrollStore 版 | LiveContainer 版 |
 |---|---|---|
 | 最高画質(最大2160p)の保存 | できる | できる(2160p は AV1 が多く、A16 など AV1 非対応の端末では、アプリ内で再生できない) |
-| 音声のみ | MP3 / M4A / Opus / FLAC / WAV | M4A のみ |
-| 字幕の埋め込み、SponsorBlock | できる | できない |
+| 音声のみ | MP3 / M4A / Opus / FLAC / WAV | M4A または Opus(`.mka`)。設定で選ぶ |
+| 字幕の埋め込み、SponsorBlock | できる | できない(項目は非表示) |
 | 区間だけのダウンロード | できる | 未対応(ffmpeg が必要なため) |
-| 映像と音声の結合 | ffmpeg | AVFoundation(H.264 または AV1 の mp4 と、m4a) |
+| 映像と音声の結合 | ffmpeg | AVFoundation(H.264 / AV1 の mp4 + m4a)。VP9 + Opus は自作の Matroska 書き出しで `.mkv` / `.webm` に結合 |
 | 動画を渡す方法 | 共有メニュー、リンクのコピー | リンクをコピーして貼り付け |
-| yt-dlp の更新 | アプリ内で更新 | アプリの入れ替えで更新 |
+| yt-dlp の更新 | アプリ内で更新 | アプリ内で更新(設定の「ダウンロードエンジン」。「同梱の版に戻す」も可) |
+| アプリの更新案内 | あり | あり(起動時、12時間に1回まで) |
 | 初回の準備 | ランタイムをダウンロード(約120MB、展開後は約520MB) | なし(アプリに同梱、アプリは約50MB) |
 
 迷ったら、TrollStore が使えるなら TrollStore 版を選んでください(機能が多い)。両方入れても干渉しません(bundle ID が別です)。入れた版が環境に合っていないときは、アプリを開くと案内が出ます。
@@ -51,7 +52,7 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 
 ### 入れ方
 - **LiveContainer の「ソース」に追加:** `https://mikiyan1978.github.io/sileo-repo/lc-source.json`(AltStore 形式)。一覧から YTDownloader LC をインストールします。
-- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.0](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.0) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
+- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.0](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.0) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
 
 ### 動作を確認できたこと(iPhone 14 Pro、iOS 26.6.2、JIT なし)
 - 動画の情報取得、画質の一覧、ダウンロード、映像と音声の結合、ライブラリでの再生。
@@ -63,7 +64,10 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 |---|---|
 | サムネイル・再生時間 | ffprobe/ffmpeg が無いので、yt-dlp が保存した webp/png をそのまま使い、無ければ AVFoundation で1フレームを取り出す。再生時間と寸法も AVFoundation で読む |
 | Safari の Cookie | 読めない(LiveContainer の中のアプリは、他のアプリの領域にアクセスできない)。cookies.txt をファイルから読み込む方式のみ |
-| yt-dlp の更新 | アプリ内の更新機能は無効(設定画面からも外した)。更新はアプリの入れ替えで行う |
+| yt-dlp の更新 | 設定の「ダウンロードエンジン」で最新の yt-dlp(zipapp)を取得して差し替える。SHA-256 を検証し、読み込みに失敗したら同梱の版へ自動で戻す |
+| MKV / WebM | AVFoundation は開けないので、結合は自作の EBML 書き出し(`mkvmux.py`)。再生は VLC など(共有時は APFS のクローンで、容量を増やさず元のファイル名のまま渡す) |
+| 音声のみ | DASH の m4a は再生時間が2倍に見えるため、書き出し(パススルー)で作り直す。Opus は `.mka` |
+| アプリの更新案内 | 起動時に、公開中の版と比べて案内を出す |
 | 動画を渡す方法 | 共有メニューからは直接開けない。YouTube でリンクをコピーし、アプリの「URLを貼り付けて開始」を押す |
 | 初回起動 | 「準備完了」の説明画面を表示。設定の「ヘルプ」から、使い方ガイドと説明画面をいつでも開き直せる |
 | 版の食い違い | TrollStore 版を LiveContainer の中で起動、または LC 版を LiveContainer の外で起動すると、アプリが案内を出す(LiveContainer が設定する環境変数 `LC_HOME_PATH` で判定) |
@@ -205,8 +209,8 @@ JSなしでも、既定のクライアントで**1080p・1440p・2160pのURL**�
 
 ## 今後の課題
 
-1. LC 版の画面から、使えない機能(音声形式の変換、字幕の埋め込み、SponsorBlock、区間のダウンロード)の項目を隠すか、無効と分かるようにする。
-2. yt-dlp を、アプリの入れ替えなしで更新する方法(新しい純 Python の wheel を `Documents` に置き、先に読み込む案)。
+1. ~~使えない機能の項目を隠す~~(LC 1.2 で対応済み)。
+2. ~~yt-dlp をアプリの入れ替えなしで更新する~~(LC 1.3.0 で対応済み。実際の GitHub からの取得は、新しい yt-dlp が出るまで未確認)。
 3. AV1・VP9 を、アプリ内で再生したい場合の、ソフトウェアデコーダ。
 4. 年齢制限・ライブ・プレイリスト・メンバー限定など、確認していない動画の種類。
 5. iOS 15 での動作確認(LC 版の最低バージョンは、確認できていないので iOS 16.0 にしている)。
