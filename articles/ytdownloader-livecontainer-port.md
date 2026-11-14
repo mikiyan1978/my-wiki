@@ -52,7 +52,7 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 
 ### 入れ方
 - **LiveContainer の「ソース」に追加:** `https://mikiyan1978.github.io/sileo-repo/lc-source.json`(AltStore 形式)。一覧から YTDownloader LC をインストールします。
-- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.0](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.0) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
+- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.1](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.1) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
 
 ### 動作を確認できたこと(iPhone 14 Pro、iOS 26.6.2、JIT なし)
 - 動画の情報取得、画質の一覧、ダウンロード、映像と音声の結合、ライブラリでの再生。
@@ -68,6 +68,7 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 | MKV / WebM | AVFoundation は開けないので、結合は自作の EBML 書き出し(`mkvmux.py`)。再生は VLC など(共有時は APFS のクローンで、容量を増やさず元のファイル名のまま渡す) |
 | 音声のみ | DASH の m4a は再生時間が2倍に見えるため、書き出し(パススルー)で作り直す。Opus は `.mka` |
 | アプリの更新案内 | 起動時に、公開中の版と比べて案内を出す |
+| 完了・失敗の通知 | LiveContainer の中のアプリには、iOS が通知を許可しない(許可を求めても、確認が出ずに `UNErrorDomain Code=1` で失敗する。実機で確認)。代わりに、画面の上のバナーと振動(アプリを開いているとき)、ライブラリのタブの件数の印(閉じている間に終わった分)で知らせる |
 | 動画を渡す方法 | 共有メニューからは直接開けないので、**ショートカット**を使う(下記)。または、YouTube でリンクをコピーし、アプリの「URLを貼り付けて開始」を押す |
 | 初回起動 | 「準備完了」の説明画面を表示。設定の「ヘルプ」から、使い方ガイドと説明画面をいつでも開き直せる |
 | 版の食い違い | TrollStore 版を LiveContainer の中で起動、または LC 版を LiveContainer の外で起動すると、アプリが案内を出す(LiveContainer が設定する環境変数 `LC_HOME_PATH` で判定) |
