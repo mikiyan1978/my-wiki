@@ -37,7 +37,7 @@ TrollStore版のYTDownloaderは、LiveContainerに入れても動きません。
 | 字幕の埋め込み、SponsorBlock | できる | できない(項目は非表示) |
 | 区間だけのダウンロード | できる | 未対応(ffmpeg が必要なため) |
 | 映像と音声の結合 | ffmpeg | AVFoundation(H.264 / AV1 の mp4 + m4a)。VP9 + Opus は自作の Matroska 書き出しで `.mkv` / `.webm` に結合 |
-| 動画を渡す方法 | 共有メニュー、リンクのコピー | リンクをコピーして貼り付け |
+| 動画を渡す方法 | 共有メニュー、リンクのコピー | 共有メニュー用ショートカット、またはリンクをコピーして貼り付け |
 | yt-dlp の更新 | アプリ内で更新 | アプリ内で更新(設定の「ダウンロードエンジン」。「同梱の版に戻す」も可) |
 | アプリの更新案内 | あり | あり(起動時、12時間に1回まで) |
 | 初回の準備 | ランタイムをダウンロード(約120MB、展開後は約520MB) | なし(アプリに同梱、アプリは約50MB) |
@@ -68,11 +68,16 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 | MKV / WebM | AVFoundation は開けないので、結合は自作の EBML 書き出し(`mkvmux.py`)。再生は VLC など(共有時は APFS のクローンで、容量を増やさず元のファイル名のまま渡す) |
 | 音声のみ | DASH の m4a は再生時間が2倍に見えるため、書き出し(パススルー)で作り直す。Opus は `.mka` |
 | アプリの更新案内 | 起動時に、公開中の版と比べて案内を出す |
-| 動画を渡す方法 | 共有メニューからは直接開けない。YouTube でリンクをコピーし、アプリの「URLを貼り付けて開始」を押す |
+| 動画を渡す方法 | 共有メニューからは直接開けないので、**ショートカット**を使う(下記)。または、YouTube でリンクをコピーし、アプリの「URLを貼り付けて開始」を押す |
 | 初回起動 | 「準備完了」の説明画面を表示。設定の「ヘルプ」から、使い方ガイドと説明画面をいつでも開き直せる |
 | 版の食い違い | TrollStore 版を LiveContainer の中で起動、または LC 版を LiveContainer の外で起動すると、アプリが案内を出す(LiveContainer が設定する環境変数 `LC_HOME_PATH` で判定) |
 
-### なぜ共有メニューから開けないのか
+### 共有メニューから渡すショートカット
+LiveContainer の起動 URL を組み立てるショートカット「YTDownloader LCへ送る」を作りました(実機の iPhone 14 Pro で確認)。入手は [iOSTweaks の ShareShortcut](https://github.com/mikiyan1978/iOSTweaks/tree/main/YTDownloaderTrollStore/LiveContainer/ShareShortcut) から `YTDownloader LCへ送る.shortcut` を iPhone で開き、「ショートカットを追加」を押します。使い方は、YouTube で動画の共有 → 「YTDownloader LCへ送る」を選ぶだけで、LiveContainer 経由でアプリが開き、画質の選択画面に進みます。
+
+仕組み: 動画 URL を URL エンコードし、`ytdownloaderlc://open?url=…` を作って Base64 にし、`livecontainer://livecontainer-launch?bundle-name=com.mikiyan1978.ytdownloader.lc.app&open-url=<Base64>` を開きます。アプリ側は、もともと `ytdownloaderlc://` を受け取る処理を持っていたので、変更はありません。共有シートに出ないときは、ショートカットの詳細で「共有シートに表示」をオンにします。
+
+### なぜ共有メニューから直接は開けないのか
 LiveContainer 自身は共有シートの拡張機能を持っており、共有した URL を LiveContainer に渡せます。ところが、LiveContainer は `https`/`http` の URL を、ゲストアプリの URL スキームでは探さず、自分の Web 表示で開く作りです(ソースを読んで確認)。ゲストアプリを URL で指定して開くには `livecontainer://livecontainer-launch?bundle-name=…&open-url=<Base64>` を、ショートカットなどで組み立てる必要があり、利用者の手間が大きいので採用しませんでした。ゲストアプリの拡張機能も、LiveContainer の中では登録できません。
 
 ---
