@@ -37,7 +37,7 @@ TrollStore版のYTDownloaderは、LiveContainerに入れても動きません。
 | 字幕の埋め込み、SponsorBlock | できる | できない(項目は非表示) |
 | 区間だけのダウンロード | できる | 未対応(ffmpeg が必要なため) |
 | 映像と音声の結合 | ffmpeg | AVFoundation(H.264 / AV1 の mp4 + m4a)。VP9 + Opus は自作の Matroska 書き出しで `.mkv` / `.webm` に結合 |
-| 動画を渡す方法 | 共有メニュー、リンクのコピー | YouTube のリンクをコピーして切り替えると自動で始まる(1.3.2)。ショートカット、貼り付けも可 |
+| 動画を渡す方法 | 共有メニュー、リンクのコピー | uYou の共有シートから直接渡せる(1.3.3)。リンクのコピー(1.3.2)、ショートカット、貼り付けも可 |
 | yt-dlp の更新 | アプリ内で更新 | アプリ内で更新(設定の「ダウンロードエンジン」。「同梱の版に戻す」も可) |
 | アプリの更新案内 | あり | あり(起動時、12時間に1回まで) |
 | 初回の準備 | ランタイムをダウンロード(約120MB、展開後は約520MB) | なし(アプリに同梱、アプリは約50MB) |
@@ -52,7 +52,7 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 
 ### 入れ方
 - **LiveContainer の「ソース」に追加:** `https://mikiyan1978.github.io/sileo-repo/lc-source.json`(AltStore 形式)。一覧から YTDownloader LC をインストールします。
-- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.2](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.2) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
+- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.3](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.3) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
 
 ### 動作を確認できたこと(iPhone 14 Pro、iOS 26.6.2、JIT なし)
 - 動画の情報取得、画質の一覧、ダウンロード、映像と音声の結合、ライブラリでの再生。
@@ -69,9 +69,16 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 | 音声のみ | DASH の m4a は再生時間が2倍に見えるため、書き出し(パススルー)で作り直す。Opus は `.mka` |
 | アプリの更新案内 | 起動時に、公開中の版と比べて案内を出す |
 | 完了・失敗の通知 | LiveContainer の中のアプリには、iOS が通知を許可しない(許可を求めても、確認が出ずに `UNErrorDomain Code=1` で失敗する。実機で確認)。代わりに、画面の上のバナーと振動(アプリを開いているとき)、ライブラリのタブの件数の印(閉じている間に終わった分)で知らせる |
-| 動画を渡す方法 | **YouTube のリンクをコピーして、アプリに切り替えると、自動で画質の選択が始まる**(1.3.2)。同じ URL では二度始めない(別のリンクをコピーしたときだけ)。YouTube 以外は「URLを貼り付けて開始」。共有メニューからは直接渡せない(下記)ので、ショートカットも使える |
+| 動画を渡す方法 | **uYou(YouTube)の共有シートに「YTDownloader LC」を足す Tweak(1.3.3、下記)**。ほかに、**YouTube のリンクをコピーして、アプリに切り替えると、自動で画質の選択が始まる**(1.3.2)。同じ URL では二度始めない(別のリンクをコピーしたときだけ)。YouTube 以外は「URLを貼り付けて開始」。共有メニューからは直接渡せない(下記)ので、ショートカットも使える |
 | 初回起動 | 「準備完了」の説明画面を表示。設定の「ヘルプ」から、使い方ガイドと説明画面をいつでも開き直せる |
 | 版の食い違い | TrollStore 版を LiveContainer の中で起動、または LC 版を LiveContainer の外で起動すると、アプリが案内を出す(LiveContainer が設定する環境変数 `LC_HOME_PATH` で判定) |
+
+### uYou の共有シートに足す Tweak(1.3.3)
+LiveContainer の中の YouTube(uYou)の共有シートに「YTDownloader LC」を足す dylib(`YTDLCShare`)を同梱しました。選ぶと、ショートカットと同じ形の URL を直接開き、アプリが開いて画質の選択に進みます(実機の iPhone 14 Pro で確認)。ショートカットは不要です。
+
+導入はアプリがやります。**LiveContainer でこのアプリを、マルチタスクをオフにした通常モードで開き**、起動時の案内の「追加する」か、設定の「uYou・YouTube から送る」を押します。同梱の dylib を LiveContainer の `Documents/Tweaks/<フォルダ>/` に置き、YouTube 側の `LCAppInfo.plist` の `LCTweakFolder` にフォルダ名を書く仕組みです。そのあと LiveContainer を完全に終了して開き直します。
+
+マルチタスク表示のゲストは、別のプロセスで動くため、LiveContainer 本体のフォルダを開けません(実機で「アクセス権がない」を確認)。このときは、通常モードで開き直すよう案内が出ます。すでに別の Tweak フォルダを使っているアプリでは、そのフォルダに入れます(1 アプリにつき 1 フォルダしか選べないため)。ソースは [ShareTweak](https://github.com/mikiyan1978/iOSTweaks/tree/main/YTDownloaderTrollStore/LiveContainer/ShareTweak) にあります。
 
 ### 共有メニューから渡すショートカット
 LiveContainer の起動 URL を組み立てるショートカット「YTDownloader LCへ送る」を作りました(実機の iPhone 14 Pro で確認)。入手は [iOSTweaks の ShareShortcut](https://github.com/mikiyan1978/iOSTweaks/tree/main/YTDownloaderTrollStore/LiveContainer/ShareShortcut) から `YTDownloader LCへ送る.shortcut` を iPhone で開き、「ショートカットを追加」を押します。使い方は、YouTube で動画の共有 → 「YTDownloader LCへ送る」を選ぶだけで、LiveContainer 経由でアプリが開き、画質の選択画面に進みます。
