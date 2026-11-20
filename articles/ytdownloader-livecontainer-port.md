@@ -52,12 +52,15 @@ LiveContainer 版の確認範囲は、実機(iPhone 14 Pro、iOS 26.6.2、JIT �
 
 ### 入れ方
 - **LiveContainer の「ソース」に追加:** `https://mikiyan1978.github.io/sileo-repo/lc-source.json`(AltStore 形式)。一覧から YTDownloader LC をインストールします。
-- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.4](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.4) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
+- **IPA を直接取り込む:** [GitHub Releases の ytdownloader-lc-v1.3.5](https://github.com/mikiyan1978/sileo-repo/releases/tag/ytdownloader-lc-v1.3.5) から IPA(署名なし、約14MB)を取り、LiveContainer の「+」から取り込みます。LiveContainer が自分の証明書で署名します。
 
 ### 動作を確認できたこと(iPhone 14 Pro、iOS 26.6.2、JIT なし)
 - 動画の情報取得、画質の一覧、ダウンロード、映像と音声の結合、ライブラリでの再生。
 - 「互換性優先」をオンにすると、H.264 に絞られて再生できる。
 - ライブラリのサムネイルと再生時間の表示(下記)。
+- (1.3.5)アプリ内の「ブラウズ」タブ(埋め込みの m.youtube.com)。再生画面のCC・歯車と同じ並びに本物のダウンロードボタンが出て、タップするとタブ切り替えなしでその場に画質選択のモーダルが出る。
+- (1.3.5)設定画面をピル型セグメントコントロールのカードUIに刷新。保存ボタンは画面上部に固定、スクロールせずいつでも押せる。
+- (1.3.5)ライブラリのサムネイル表示を、ImageIOでの縮小デコード+キャッシュに変更。大きな画像(YouTube本家サムネイルは1920x1080超のことも)をそのまま読み込んでいた分を軽くした。
 
 ### LC 版での置き換え・制限
 | 項目 | 内容 |
